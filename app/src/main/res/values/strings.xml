@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">NewRa</string>
+    
+    <!-- Login Screen -->
+    <string name="login_title">Road Accident Report</string>
+    <string name="login_subtitle">Tunisian Government - Official App</string>
+    <string name="login_officer_id">Officer ID</string>
+    <string name="login_officer_id_hint">Enter your officer ID</string>
+    <string name="login_password">Password</string>
+    <string name="login_password_hint">Enter your password</string>
+    <string name="login_button">Sign In</string>
+    <string name="login_loading">Signing in…</string>
+    <string name="login_forgot_password">Forgot Password?</string>
+    <string name="login_error_empty_officer_id">Please enter your Officer ID</string>
+    <string name="login_error_empty_password">Please enter your password</string>
+    <string name="login_error_invalid_credentials">Invalid credentials. Please try again.</string>
+    
+    <!-- Language -->
+    <string name="language_english">English</string>
+    <string name="language_french">Français</string>
+    <string name="language_arabic">العربية</string>
+    <string name="language_select">Select Language</string>
+    
+    <!-- Common -->
+    <string name="welcome">Welcome</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="retry">Retry</string>
+</resources>

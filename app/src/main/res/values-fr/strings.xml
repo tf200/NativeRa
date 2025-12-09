@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">NewRa</string>
+    
+    <!-- Login Screen -->
+    <string name="login_title">Rapport d\'Accident de la Route</string>
+    <string name="login_subtitle">Gouvernement Tunisien - Application Officielle</string>
+    <string name="login_officer_id">Matricule Agent</string>
+    <string name="login_officer_id_hint">Entrez votre matricule</string>
+    <string name="login_password">Mot de passe</string>
+    <string name="login_password_hint">Entrez votre mot de passe</string>
+    <string name="login_button">Se Connecter</string>
+    <string name="login_loading">Connexion en cours…</string>
+    <string name="login_forgot_password">Mot de passe oublié ?</string>
+    <string name="login_error_empty_officer_id">Veuillez entrer votre matricule</string>
+    <string name="login_error_empty_password">Veuillez entrer votre mot de passe</string>
+    <string name="login_error_invalid_credentials">Identifiants invalides. Veuillez réessayer.</string>
+    
+    <!-- Language -->
+    <string name="language_english">English</string>
+    <string name="language_french">Français</string>
+    <string name="language_arabic">العربية</string>
+    <string name="language_select">Choisir la langue</string>
+    
+    <!-- Common -->
+    <string name="welcome">Bienvenue</string>
+    <string name="error">Erreur</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Annuler</string>
+    <string name="retry">Réessayer</string>
+</resources>

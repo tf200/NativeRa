@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">نيو را</string>
+    
+    <!-- Login Screen -->
+    <string name="login_title">تقرير حادث مرور</string>
+    <string name="login_subtitle">الجمهورية التونسية - تطبيق رسمي</string>
+    <string name="login_officer_id">رقم العون</string>
+    <string name="login_officer_id_hint">أدخل رقم العون الخاص بك</string>
+    <string name="login_password">كلمة المرور</string>
+    <string name="login_password_hint">أدخل كلمة المرور</string>
+    <string name="login_button">تسجيل الدخول</string>
+    <string name="login_loading">جاري تسجيل الدخول…</string>
+    <string name="login_forgot_password">نسيت كلمة المرور؟</string>
+    <string name="login_error_empty_officer_id">يرجى إدخال رقم العون</string>
+    <string name="login_error_empty_password">يرجى إدخال كلمة المرور</string>
+    <string name="login_error_invalid_credentials">بيانات غير صحيحة. يرجى المحاولة مرة أخرى.</string>
+    
+    <!-- Language -->
+    <string name="language_english">English</string>
+    <string name="language_french">Français</string>
+    <string name="language_arabic">العربية</string>
+    <string name="language_select">اختر اللغة</string>
+    
+    <!-- Common -->
+    <string name="welcome">مرحباً</string>
+    <string name="error">خطأ</string>
+    <string name="ok">موافق</string>
+    <string name="cancel">إلغاء</string>
+    <string name="retry">إعادة المحاولة</string>
+</resources>
