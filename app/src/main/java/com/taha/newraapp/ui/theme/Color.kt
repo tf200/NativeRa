@@ -12,6 +12,9 @@ val LightOnPrimary = Color(0xFFFFFFFF)
 val LightPrimaryContainer = Color(0xFFEADDFF)
 val LightOnPrimaryContainer = Color(0xFF21005D)
 
+val Amber500 = Color(0xFFF59E0B)
+val Slate100 = Color(0xFFF1F5F9)
+
 val LightSecondary = Color(0xFF625B71)
 val LightOnSecondary = Color(0xFFFFFFFF)
 val LightSecondaryContainer = Color(0xFFE8DEF8)
@@ -49,7 +52,7 @@ val LightCardBackground = Color(0xFFFFFFFF)
 val LightTextPrimary = Color(0xFF1C1B1F)
 val LightTextSecondary = Color(0xFF49454F)
 val LightTextMuted = Color(0xFF9CA3AF)
-val LightBorder = Color(0xFFE5E7EB)
+val LightBorder = Slate100
 val LightHeaderBackground = Color(0xFF6750A4)
 val LightProgressBarBackground = Color(0xFFF3F4F6)
 val LightFloatingButton = Color(0xFF6750A4)

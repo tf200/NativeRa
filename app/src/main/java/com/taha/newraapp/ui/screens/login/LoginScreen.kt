@@ -27,6 +27,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -50,8 +52,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -100,17 +104,10 @@ private fun LoginScreenContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .imePadding() // Critical: Pushes content up when keyboard opens
+            .imePadding()
     ) {
         Column(
             modifier = Modifier
@@ -134,23 +131,44 @@ private fun LoginScreenContent(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Header Section
+            // Rotated Header Box
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .rotate(3f)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(20.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Welcome Text
             Text(
-                text = stringResource(R.string.login_title),
-                style = MaterialTheme.typography.displaySmall,
+                text = stringResource(R.string.login_welcome_back),
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Start,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
             
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = stringResource(R.string.login_subtitle),
+                text = stringResource(R.string.login_sign_in_continue),
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Start,
+                color = com.taha.newraapp.ui.theme.TestRaTheme.extendedColors.textMuted,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -187,7 +205,7 @@ private fun LoginScreenContent(
                 keyboardActions = KeyboardActions(
                     onNext = { focusManager.moveFocus(FocusDirection.Down) }
                 ),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
@@ -196,7 +214,7 @@ private fun LoginScreenContent(
                 )
             )
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
             // Password
             Text(
@@ -250,7 +268,7 @@ private fun LoginScreenContent(
                         onEvent(LoginEvent.Login)
                     }
                 ),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
@@ -291,7 +309,7 @@ private fun LoginScreenContent(
                 )
             }
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
             // Login Button
             Button(
@@ -300,7 +318,7 @@ private fun LoginScreenContent(
                     .fillMaxWidth()
                     .height(56.dp),
                 enabled = !uiState.isLoading,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 ),
@@ -316,13 +334,33 @@ private fun LoginScreenContent(
                         strokeWidth = 3.dp
                     )
                 } else {
-                    Text(
-                        text = stringResource(R.string.login_button),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.login_button),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.ArrowForward,
+                            contentDescription = null
+                        )
+                    }
                 }
+            }
+            
+            Spacer(modifier = Modifier.weight(1f)) // Push footer to bottom
+            
+            // Footer
+            TextButton(onClick = { /* TODO: Navigate to Sign Up */ }) {
+                 Text(
+                    text = stringResource(R.string.login_signup_text),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             
             Spacer(modifier = Modifier.height(24.dp))

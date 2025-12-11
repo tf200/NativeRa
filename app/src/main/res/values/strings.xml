@@ -11,9 +11,12 @@
     <string name="login_button">Sign In</string>
     <string name="login_loading">Signing in…</string>
     <string name="login_forgot_password">Forgot Password?</string>
+    <string name="login_welcome_back">Welcome Back</string>
+    <string name="login_sign_in_continue">Please sign in to continue</string>
     <string name="login_error_empty_officer_id">Please enter your Officer ID</string>
     <string name="login_error_empty_password">Please enter your password</string>
     <string name="login_error_invalid_credentials">Invalid credentials. Please try again.</string>
+    <string name="login_signup_text">Don\'t have an account? Sign up</string>
     
     <!-- Language -->
     <string name="language_english">English</string>

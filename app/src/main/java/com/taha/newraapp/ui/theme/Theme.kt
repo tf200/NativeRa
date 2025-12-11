@@ -29,7 +29,8 @@ data class ExtendedColors(
     val headerBackground: Color,
     val progressBarBackground: Color,
     val floatingButton: Color,
-    val floatingButtonText: Color
+    val floatingButtonText: Color,
+    val warning: Color
 )
 
 val LocalExtendedColors = staticCompositionLocalOf {
@@ -42,7 +43,8 @@ val LocalExtendedColors = staticCompositionLocalOf {
         headerBackground = Color.Unspecified,
         progressBarBackground = Color.Unspecified,
         floatingButton = Color.Unspecified,
-        floatingButtonText = Color.Unspecified
+        floatingButtonText = Color.Unspecified,
+        warning = Color.Unspecified
     )
 }
 
@@ -55,7 +57,8 @@ private val LightExtendedColors = ExtendedColors(
     headerBackground = LightHeaderBackground,
     progressBarBackground = LightProgressBarBackground,
     floatingButton = LightFloatingButton,
-    floatingButtonText = LightFloatingButtonText
+    floatingButtonText = LightFloatingButtonText,
+    warning = Amber500
 )
 
 private val DarkExtendedColors = ExtendedColors(
@@ -67,7 +70,8 @@ private val DarkExtendedColors = ExtendedColors(
     headerBackground = DarkHeaderBackground,
     progressBarBackground = DarkProgressBarBackground,
     floatingButton = DarkFloatingButton,
-    floatingButtonText = DarkFloatingButtonText
+    floatingButtonText = DarkFloatingButtonText,
+    warning = Amber500
 )
 
 private val DarkColorScheme = darkColorScheme(
