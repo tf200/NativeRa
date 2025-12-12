@@ -1,6 +1,12 @@
 package com.taha.newraapp.data.socket
 
 import android.util.Log
+import com.taha.newraapp.data.socket.model.DeliveredInfo
+import com.taha.newraapp.data.socket.model.DeliveryConfirmation
+import com.taha.newraapp.data.socket.model.MessageDeliveryPayload
+import com.taha.newraapp.data.socket.model.SeenConfirmation
+import com.taha.newraapp.data.socket.model.ReceivedMessage
+import com.taha.newraapp.data.socket.model.ReceivedMessagePayload
 import com.taha.newraapp.data.socket.model.SocketMessage
 import com.taha.newraapp.data.socket.model.SocketMessageMetadata
 import com.taha.newraapp.data.socket.model.SocketMessagePayload
@@ -30,7 +36,11 @@ class ChatSocketService(
         
         // Event names
         const val EVENT_REQUEST_MESSAGE_SEND = "request:message:send"
+        const val EVENT_REQUEST_MESSAGE_DELIVERED = "request:message:delivered"
+        const val EVENT_REQUEST_MESSAGE_SEEN = "request:message:seen"
         const val EVENT_ACTION_MESSAGE_SEND = "action:message:send"
+        const val EVENT_ACTION_MESSAGE_DELIVERED = "action:message:delivered"
+        const val EVENT_ACTION_MESSAGE_SEEN = "action:message:seen"
         const val EVENT_ACTION_MESSAGE_ACKNOWLEDGED = "action:message:acknowledged"
     }
 
@@ -46,13 +56,37 @@ class ChatSocketService(
     private val _pendingMessages = MutableStateFlow<Map<Long, PendingMessage>>(emptyMap())
     val pendingMessages: StateFlow<Map<Long, PendingMessage>> = _pendingMessages.asStateFlow()
 
-    // Flow for incoming messages
-    private val _incomingMessages = MutableSharedFlow<SocketMessagePayload>(replay = 0)
-    val incomingMessages: SharedFlow<SocketMessagePayload> = _incomingMessages.asSharedFlow()
+    // Flow for incoming messages (new backend format)
+    private val _incomingMessages = MutableSharedFlow<ReceivedMessage>(
+        replay = 0,
+        extraBufferCapacity = 64,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
+    val incomingMessages: SharedFlow<ReceivedMessage> = _incomingMessages.asSharedFlow()
 
     // Flow for message acknowledgments
-    private val _messageAcknowledged = MutableSharedFlow<MessageAckResult>(replay = 0)
+    private val _messageAcknowledged = MutableSharedFlow<MessageAckResult>(
+        replay = 0,
+        extraBufferCapacity = 64,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
     val messageAcknowledged: SharedFlow<MessageAckResult> = _messageAcknowledged.asSharedFlow()
+
+    // Flow for delivery confirmations (when recipient acks our message)
+    private val _deliveryConfirmations = MutableSharedFlow<DeliveryConfirmation>(
+        replay = 0,
+        extraBufferCapacity = 64,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
+    val deliveryConfirmations: SharedFlow<DeliveryConfirmation> = _deliveryConfirmations.asSharedFlow()
+
+    // Flow for seen confirmations (when recipient reads our message)
+    private val _seenConfirmations = MutableSharedFlow<SeenConfirmation>(
+        replay = 0,
+        extraBufferCapacity = 64,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
+    val seenConfirmations: SharedFlow<SeenConfirmation> = _seenConfirmations.asSharedFlow()
 
     init {
         registerEventHandlers()
@@ -63,12 +97,20 @@ class ChatSocketService(
      */
     private fun registerEventHandlers() {
         // Handle incoming messages from other users
+        // Payload format: { message: { id, content?, messageType, senderId, receivers, attachmentId?, timestamp } }
         socketManager.on(EVENT_ACTION_MESSAGE_SEND) { data ->
             try {
                 val jsonStr = data.toString()
-                Log.d(TAG, "Received message: $jsonStr")
-                val payload = json.decodeFromString<SocketMessagePayload>(jsonStr)
-                _incomingMessages.tryEmit(payload)
+                Log.d(TAG, "Received message event: $jsonStr")
+                val payload = json.decodeFromString<ReceivedMessagePayload>(jsonStr)
+                Log.d(TAG, "Parsed message payload: ${payload.message.id}, content=${payload.message.content}")
+                
+                val emitted = _incomingMessages.tryEmit(payload.message)
+                if (emitted) {
+                    Log.d(TAG, "Successfully emitted message to flow: ${payload.message.id}")
+                } else {
+                    Log.e(TAG, "Failed to emit message to flow (buffer full?): ${payload.message.id}")
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error parsing incoming message", e)
             }
@@ -97,19 +139,54 @@ class ChatSocketService(
                 Log.e(TAG, "Error parsing message acknowledgment", e)
             }
         }
+
+        // Handle delivery confirmations (recipient acked our message)
+        // Payload: { messageId, delivered: { to, timestamp } }
+        socketManager.on(EVENT_ACTION_MESSAGE_DELIVERED) { data ->
+            try {
+                val jsonStr = data.toString()
+                Log.d(TAG, "Received delivery confirmation event: $jsonStr")
+                val confirmation = json.decodeFromString<DeliveryConfirmation>(jsonStr)
+                Log.d(TAG, "Parsed delivery confirmation: msgId=${confirmation.messageId}, to=${confirmation.delivered.to}")
+
+                val emitted = _deliveryConfirmations.tryEmit(confirmation)
+                if (emitted) {
+                    Log.d(TAG, "Successfully emitted delivery confirmation: ${confirmation.messageId}")
+                } else {
+                    Log.e(TAG, "Failed to emit delivery confirmation (buffer full?): ${confirmation.messageId}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error parsing delivery confirmation", e)
+            }
+        }
+
+        // Handle seen confirmations (recipient read our message)
+        // Payload: { messageId, seen: { by, timestamp } }
+        socketManager.on(EVENT_ACTION_MESSAGE_SEEN) { data ->
+            try {
+                val jsonStr = data.toString()
+                Log.d(TAG, "Received seen confirmation event: $jsonStr")
+                val confirmation = json.decodeFromString<SeenConfirmation>(jsonStr)
+                Log.d(TAG, "Parsed seen confirmation: msgId=${confirmation.messageId}, by=${confirmation.seen.by}")
+
+                val emitted = _seenConfirmations.tryEmit(confirmation)
+                if (emitted) {
+                    Log.d(TAG, "Successfully emitted seen confirmation: ${confirmation.messageId}")
+                } else {
+                    Log.e(TAG, "Failed to emit seen confirmation (buffer full?): ${confirmation.messageId}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error parsing seen confirmation", e)
+            }
+        }
     }
 
     /**
      * Send a text message to one or more recipients.
-     *
-     * @param content The message text
-     * @param senderId The sender's user ID
-     * @param senderName The sender's display name
-     * @param receiverIds List of recipient user IDs
-     * @param deviceId The sender's device ID
-     * @param roomId Optional room/conversation ID
-     * @return The local ID used for tracking this message
+     * OLD METHOD - kept for backward compatibility.
+     * @deprecated Use sendMessage() instead for new code
      */
+    @Deprecated("Use sendMessage() instead", ReplaceWith("sendMessage()"))
     fun sendTextMessage(
         content: String,
         senderId: String,
@@ -119,7 +196,7 @@ class ChatSocketService(
         roomId: String? = null
     ): Long {
         val localId = localIdCounter.incrementAndGet()
-        val timestamp = getCurrentTimestamp()
+        val timestamp = getUtcTimestamp()
 
         val payload = SocketMessagePayload(
             message = SocketMessage(
@@ -160,6 +237,221 @@ class ChatSocketService(
         }
 
         return localId
+    }
+
+    /**
+     * Send a message using the new backend interface.
+     * Matches SendMessagePayload interface exactly.
+     * 
+     * @param messageId Client-generated UUID for the message
+     * @param content Message text (required for 'text', optional for 'media')
+     * @param messageType Either "text" or "media"
+     * @param senderId Your user ID (must match socket.data.userId)
+     * @param receiverIds Array of recipient user IDs
+     * @param attachmentId Optional, only for media messages
+     * @param onAck Callback with (success: Boolean, error: String?)
+     */
+    fun sendMessage(
+        messageId: String,
+        content: String,
+        messageType: String,
+        senderId: String,
+        receiverIds: List<String>,
+        attachmentId: String? = null,
+        onAck: (success: Boolean, error: String?) -> Unit
+    ) {
+        val timestamp = getUtcTimestamp()
+
+        // Build payload matching backend SendMessagePayload interface
+        val messageObj = JSONObject().apply {
+            put("id", messageId)
+            if (content.isNotBlank()) put("content", content)
+            put("messageType", messageType)
+            put("senderId", senderId)
+            put("receivers", org.json.JSONArray(receiverIds))
+            if (!attachmentId.isNullOrBlank()) put("attachmentId", attachmentId)
+            put("timestamp", timestamp)
+            // Note: encryption is optional and will be added later
+        }
+
+        val payload = JSONObject().apply {
+            put("message", messageObj)
+        }
+
+        Log.d(TAG, "Sending message: id=$messageId, type=$messageType")
+
+        try {
+            socketManager.emit(EVENT_REQUEST_MESSAGE_SEND, payload) { ackArgs ->
+                handleNewSendAck(messageId, ackArgs, onAck)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending message: ${e.message}")
+            onAck(false, e.message ?: "Failed to send message")
+        }
+    }
+
+    /**
+     * Send delivery confirmation to server when we receive a message.
+     * This notifies the sender that their message was successfully delivered to us.
+     * 
+     * @param messageId The UUID of the message that was delivered
+     * @param recipientId Our user ID (the one who received the message)
+     */
+    fun sendDeliveryConfirmation(
+        messageId: String,
+        recipientId: String
+    ) {
+        val timestamp = getUtcTimestamp()
+
+        // Build payload matching backend MessageDeliveryPayload interface
+        val deliveredObj = JSONObject().apply {
+            put("to", recipientId)
+            put("timestamp", timestamp)
+        }
+
+        val payload = JSONObject().apply {
+            put("messageId", messageId)
+            put("delivered", deliveredObj)
+        }
+
+        Log.d(TAG, "Sending delivery confirmation: messageId=$messageId, to=$recipientId")
+
+        try {
+            socketManager.emit(EVENT_REQUEST_MESSAGE_DELIVERED, payload) { ackArgs ->
+                handleDeliveryAck(messageId, ackArgs)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending delivery confirmation: ${e.message}")
+        }
+    }
+
+    /**
+     * Handle ACK for delivery confirmation.
+     */
+    private fun handleDeliveryAck(messageId: String, ackArgs: Array<Any>) {
+        try {
+            if (ackArgs.isEmpty()) {
+                Log.w(TAG, "Empty acknowledgment for delivery: $messageId")
+                return
+            }
+
+            val ackData = ackArgs[0]
+            val jsonObj = when (ackData) {
+                is JSONObject -> ackData
+                else -> JSONObject(ackData.toString())
+            }
+
+            val acknowledged = jsonObj.optBoolean("acknowledged", false)
+            if (acknowledged) {
+                Log.d(TAG, "Delivery confirmation acknowledged: $messageId")
+            } else {
+                val error = jsonObj.optString("error", "Unknown error")
+                Log.w(TAG, "Delivery confirmation not acknowledged: $messageId, error: $error")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling delivery acknowledgment: ${e.message}")
+        }
+    }
+
+    /**
+     * Send seen confirmation to server when we view/read a message.
+     * This notifies the sender that their message was seen by us.
+     * 
+     * @param messageId The UUID of the message that was seen
+     * @param seenByUserId Our user ID (the one who saw the message)
+     */
+    fun sendSeenConfirmation(
+        messageId: String,
+        seenByUserId: String
+    ) {
+        val timestamp = getUtcTimestamp()
+
+        // Build payload matching backend SeenConfirmation interface
+        val seenObj = JSONObject().apply {
+            put("by", seenByUserId)
+            put("timestamp", timestamp)
+        }
+
+        val payload = JSONObject().apply {
+            put("messageId", messageId)
+            put("seen", seenObj)
+        }
+
+        Log.d(TAG, "Sending seen confirmation: messageId=$messageId, by=$seenByUserId")
+
+        try {
+            socketManager.emit(EVENT_REQUEST_MESSAGE_SEEN, payload) { ackArgs ->
+                handleSeenAck(messageId, ackArgs)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending seen confirmation: ${e.message}")
+        }
+    }
+
+    /**
+     * Handle ACK for seen confirmation.
+     */
+    private fun handleSeenAck(messageId: String, ackArgs: Array<Any>) {
+        try {
+            if (ackArgs.isEmpty()) {
+                Log.w(TAG, "Empty acknowledgment for seen: $messageId")
+                return
+            }
+
+            val ackData = ackArgs[0]
+            val jsonObj = when (ackData) {
+                is JSONObject -> ackData
+                else -> JSONObject(ackData.toString())
+            }
+
+            val acknowledged = jsonObj.optBoolean("acknowledged", false)
+            if (acknowledged) {
+                Log.d(TAG, "Seen confirmation acknowledged: $messageId")
+            } else {
+                val error = jsonObj.optString("error", "Unknown error")
+                Log.w(TAG, "Seen confirmation not acknowledged: $messageId, error: $error")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling seen acknowledgment: ${e.message}")
+        }
+    }
+
+    /**
+     * Handle ACK for the new sendMessage method.
+     */
+    private fun handleNewSendAck(
+        messageId: String, 
+        ackArgs: Array<Any>, 
+        onAck: (Boolean, String?) -> Unit
+    ) {
+        try {
+            if (ackArgs.isEmpty()) {
+                Log.w(TAG, "Empty acknowledgment for message: $messageId")
+                onAck(false, "Empty acknowledgment from server")
+                return
+            }
+
+            val ackData = ackArgs[0]
+            val jsonObj = when (ackData) {
+                is JSONObject -> ackData
+                else -> JSONObject(ackData.toString())
+            }
+
+            val acknowledged = jsonObj.optBoolean("acknowledged", false)
+            val error = jsonObj.optString("error", "")
+
+            if (acknowledged) {
+                Log.d(TAG, "Message acknowledged: $messageId")
+                onAck(true, null)
+            } else {
+                val errorMsg = if (error.isNotBlank()) error else "Server did not acknowledge"
+                Log.e(TAG, "Message not acknowledged: $messageId, error: $errorMsg")
+                onAck(false, errorMsg)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error handling acknowledgment: ${e.message}")
+            onAck(false, e.message ?: "Error processing acknowledgment")
+        }
     }
 
     /**
@@ -208,8 +500,9 @@ class ChatSocketService(
         _pendingMessages.value = _pendingMessages.value - localId
     }
 
-    private fun getCurrentTimestamp(): String {
+    private fun getUtcTimestamp(): String {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
         return sdf.format(Date())
     }
 }

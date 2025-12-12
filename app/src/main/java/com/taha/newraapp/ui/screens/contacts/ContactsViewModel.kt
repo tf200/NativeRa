@@ -17,17 +17,29 @@ class ContactsViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    private val _contacts = getPrioritizedContactsUseCase()
+    private val _contactsResult = getPrioritizedContactsUseCase()
 
-    val uiState: StateFlow<ContactsUiState> = combine(_searchQuery, _contacts) { query, contacts ->
+    val uiState: StateFlow<ContactsUiState> = combine(_searchQuery, _contactsResult) { query, result ->
         if (query.isBlank()) {
-            ContactsUiState.Success(contacts)
+            ContactsUiState.Success(
+                recentConversations = result.recentConversations,
+                allContacts = result.allContacts
+            )
         } else {
-            val filtered = contacts.filter { contact ->
+            // Filter both lists when searching
+            val filteredRecent = result.recentConversations.filter { contact ->
+                contact.name.contains(query, ignoreCase = true) ||
+                        contact.center.contains(query, ignoreCase = true) ||
+                        (contact.lastMessage?.contains(query, ignoreCase = true) == true)
+            }
+            val filteredAll = result.allContacts.filter { contact ->
                 contact.name.contains(query, ignoreCase = true) ||
                         contact.center.contains(query, ignoreCase = true)
             }
-            ContactsUiState.Success(filtered)
+            ContactsUiState.Success(
+                recentConversations = filteredRecent,
+                allContacts = filteredAll
+            )
         }
     }.stateIn(
         scope = viewModelScope,
@@ -42,6 +54,12 @@ class ContactsViewModel(
 
 sealed interface ContactsUiState {
     data object Loading : ContactsUiState
-    data class Success(val contacts: List<ContactUiModel>) : ContactsUiState
+    
+    data class Success(
+        val recentConversations: List<ContactUiModel>,  // Contacts with messages
+        val allContacts: List<ContactUiModel>           // Contacts without messages
+    ) : ContactsUiState
+    
     data class Error(val message: String) : ContactsUiState
 }
+

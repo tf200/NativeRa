@@ -11,8 +11,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,11 +41,10 @@ fun ChatRoomScreen(
     onNavigateUp: () -> Unit,
     viewModel: ChatViewModel = koinViewModel()
 ) {
-    val messages by viewModel.allMessages.collectAsState()
+    val messages by viewModel.messages.collectAsState()
     val currentUser by viewModel.currentUser.collectAsState()
     val chatPartner by viewModel.chatPartnerUser.collectAsState()
     val messageInput by viewModel.messageInput.collectAsState()
-    val isSending by viewModel.isSending.collectAsState()
     val sendError by viewModel.sendError.collectAsState()
     val connectionStatus by viewModel.connectionStatus.collectAsState()
     val listState = rememberLazyListState()
@@ -51,6 +53,21 @@ fun ChatRoomScreen(
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
+        }
+    }
+
+    // Mark messages as seen when chat room is opened or new messages arrive.
+    // Only triggers once per new batch of unread messages (debounced).
+    // The service layer handles filtering out already-read messages.
+    val hasUnreadFromOther = messages.any { 
+        it.senderId != currentUser?.id && it.status != MessageStatus.READ 
+    }
+    
+    LaunchedEffect(hasUnreadFromOther) {
+        if (hasUnreadFromOther) {
+            // Small delay to batch rapid updates
+            kotlinx.coroutines.delay(200)
+            viewModel.markMessagesAsSeen()
         }
     }
 
@@ -103,7 +120,7 @@ fun ChatRoomScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(messages, key = { it.id }) { message ->
-                val isMe = message.senderId == currentUser?.officerId
+                val isMe = message.senderId == currentUser?.id
                 MessageBubble(message = message, isMe = isMe)
             }
         }
@@ -112,8 +129,7 @@ fun ChatRoomScreen(
         ChatInputArea(
             inputValue = messageInput,
             onValueChange = viewModel::onMessageinputChanged,
-            onSendClick = viewModel::sendMessage,
-            isSending = isSending
+            onSendClick = viewModel::sendMessage
         )
     }
 }
@@ -298,10 +314,12 @@ fun MessageBubble(
         RoundedCornerShape(20.dp, 20.dp, 20.dp, 4.dp)
     }
 
-    Column(
+    // Outer row for alignment (start or end)
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (isMe) Alignment.End else Alignment.Start
+        horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start
     ) {
+        // Bubble wraps to content size with max width constraint
         Surface(
             modifier = Modifier.widthIn(max = 280.dp),
             shape = bubbleShape,
@@ -309,7 +327,7 @@ fun MessageBubble(
             shadowElevation = 2.dp
         ) {
             Column(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 Text(
                     text = message.content,
@@ -317,16 +335,75 @@ fun MessageBubble(
                     color = textColor
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
-                Text(
-                    text = formatTime(message.timestamp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = textColor.copy(alpha = 0.7f)
-                )
+                // Time and status indicator row - wrap content, aligned end
+                Row(
+                    modifier = Modifier.align(Alignment.End),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = formatTime(message.timestamp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = textColor.copy(alpha = 0.7f)
+                    )
+                    
+                    // Show status indicator only for outgoing messages
+                    if (isMe) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        MessageStatusIndicator(
+                            status = message.status,
+                            tint = textColor.copy(alpha = 0.7f)
+                        )
+                    }
+                }
             }
         }
     }
+}
+
+/**
+ * Displays the appropriate status indicator icon based on message status.
+ * - PENDING: Clock icon (message being sent)
+ * - SENT: Single check (message reached server)
+ * - DELIVERED: Double check gray (message delivered to recipient)
+ * - READ: Double check blue (message seen by recipient)
+ * - FAILED: Error indicator (could add later)
+ */
+@Composable
+fun MessageStatusIndicator(
+    status: MessageStatus,
+    tint: Color
+) {
+    val icon = when (status) {
+        MessageStatus.PENDING -> Icons.Default.Schedule
+        MessageStatus.SENT -> Icons.Default.Done
+        MessageStatus.DELIVERED -> Icons.Default.DoneAll
+        MessageStatus.READ -> Icons.Default.DoneAll
+        MessageStatus.FAILED -> Icons.Default.Done // Could use error icon
+    }
+    
+    val iconTint = when (status) {
+        MessageStatus.READ -> Color(0xFF4FC3F7) // Light blue for read
+        MessageStatus.FAILED -> Color(0xFFF44336) // Red for failed
+        else -> tint
+    }
+    
+    val iconSize = 16.dp
+    
+    Icon(
+        imageVector = icon,
+        contentDescription = when (status) {
+            MessageStatus.PENDING -> "Sending"
+            MessageStatus.SENT -> "Sent"
+            MessageStatus.DELIVERED -> "Delivered"
+            MessageStatus.READ -> "Read"
+            MessageStatus.FAILED -> "Failed"
+        },
+        modifier = Modifier.size(iconSize),
+        tint = iconTint
+    )
 }
 
 @Composable

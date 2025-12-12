@@ -1,6 +1,7 @@
 package com.taha.newraapp.domain.model
 
 data class User(
+    val id: String, // PowerSync database ID - must be used as senderId for socket
     val officerId: String,
     val firstName: String,
     val lastName: String,

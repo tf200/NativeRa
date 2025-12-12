@@ -8,9 +8,10 @@ import com.taha.newraapp.data.local.entities.MessageEntity
 
 @Database(
     entities = [MessageEntity::class, ConversationEntity::class],
-    version = 1,
+    version = 3,  // Bumped: added retryCount, nextRetryAt, attachmentId to MessageEntity
     exportSchema = false
 )
 abstract class LocalDatabase : RoomDatabase() {
     abstract fun messageDao(): MessageDao
 }
+

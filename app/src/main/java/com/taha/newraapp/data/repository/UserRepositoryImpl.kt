@@ -23,12 +23,13 @@ class UserRepositoryImpl(
             return null
         }
         
-        val officerId = extractSubFromToken(token)
-        if (officerId == null) {
+        // JWT 'sub' claim contains the database ID (not the officerId field)
+        val userId = extractSubFromToken(token)
+        if (userId == null) {
             return null
         }
         
-        return getUserById(officerId)
+        return getUserById(userId)
     }
 
     /**
@@ -41,22 +42,23 @@ class UserRepositoryImpl(
             return null
         }
         
-        val query = "SELECT officerId, firstName, lastName, center, role, phoneNumber, isValid, isFrozen, contacts FROM User WHERE id = ? LIMIT 1"
+        val query = "SELECT id, officerId, firstName, lastName, center, role, phoneNumber, isValid, isFrozen, contacts FROM User WHERE id = ? LIMIT 1"
         
         val result = database.getOptional(
             query,
             parameters = listOf(id)
         ) { cursor ->
             User(
-                officerId = cursor.getString(0) ?: "",
-                firstName = cursor.getString(1) ?: "",
-                lastName = cursor.getString(2) ?: "",
-                center = cursor.getString(3) ?: "",
-                role = cursor.getString(4) ?: "",
-                phoneNumber = cursor.getString(5) ?: "",
-                isValid = (cursor.getLong(6) ?: 0L) == 1L,
-                isFrozen = (cursor.getLong(7) ?: 0L) == 1L,
-                contacts = cursor.getString(8) ?: "[]"
+                id = cursor.getString(0) ?: "",
+                officerId = cursor.getString(1) ?: "",
+                firstName = cursor.getString(2) ?: "",
+                lastName = cursor.getString(3) ?: "",
+                center = cursor.getString(4) ?: "",
+                role = cursor.getString(5) ?: "",
+                phoneNumber = cursor.getString(6) ?: "",
+                isValid = (cursor.getLong(7) ?: 0L) == 1L,
+                isFrozen = (cursor.getLong(8) ?: 0L) == 1L,
+                contacts = cursor.getString(9) ?: "[]"
             )
         }
         
@@ -76,18 +78,19 @@ class UserRepositoryImpl(
         }
 
         return database.getAll(
-            "SELECT officerId, firstName, lastName, center, role, phoneNumber, isValid, isFrozen, contacts FROM User WHERE id IS NOT NULL"
+            "SELECT id, officerId, firstName, lastName, center, role, phoneNumber, isValid, isFrozen, contacts FROM User WHERE id IS NOT NULL"
         ) { cursor ->
             User(
-                officerId = cursor.getString(0) ?: "",
-                firstName = cursor.getString(1) ?: "",
-                lastName = cursor.getString(2) ?: "",
-                center = cursor.getString(3) ?: "",
-                role = cursor.getString(4) ?: "",
-                phoneNumber = cursor.getString(5) ?: "",
-                isValid = (cursor.getLong(6) ?: 0L) == 1L,
-                isFrozen = (cursor.getLong(7) ?: 0L) == 1L,
-                contacts = cursor.getString(8) ?: "[]"
+                id = cursor.getString(0) ?: "",
+                officerId = cursor.getString(1) ?: "",
+                firstName = cursor.getString(2) ?: "",
+                lastName = cursor.getString(3) ?: "",
+                center = cursor.getString(4) ?: "",
+                role = cursor.getString(5) ?: "",
+                phoneNumber = cursor.getString(6) ?: "",
+                isValid = (cursor.getLong(7) ?: 0L) == 1L,
+                isFrozen = (cursor.getLong(8) ?: 0L) == 1L,
+                contacts = cursor.getString(9) ?: "[]"
             )
         }
     }
@@ -112,19 +115,20 @@ class UserRepositoryImpl(
         }
 
         return database.getAll(
-            "SELECT officerId, firstName, lastName, center, role, phoneNumber, isValid, isFrozen, contacts FROM User WHERE center = ?",
+            "SELECT id, officerId, firstName, lastName, center, role, phoneNumber, isValid, isFrozen, contacts FROM User WHERE center = ?",
             parameters = listOf(center)
         ) { cursor ->
             User(
-                officerId = cursor.getString(0) ?: "",
-                firstName = cursor.getString(1) ?: "",
-                lastName = cursor.getString(2) ?: "",
-                center = cursor.getString(3) ?: "",
-                role = cursor.getString(4) ?: "",
-                phoneNumber = cursor.getString(5) ?: "",
-                isValid = (cursor.getLong(6) ?: 0L) == 1L,
-                isFrozen = (cursor.getLong(7) ?: 0L) == 1L,
-                contacts = cursor.getString(8) ?: "[]"
+                id = cursor.getString(0) ?: "",
+                officerId = cursor.getString(1) ?: "",
+                firstName = cursor.getString(2) ?: "",
+                lastName = cursor.getString(3) ?: "",
+                center = cursor.getString(4) ?: "",
+                role = cursor.getString(5) ?: "",
+                phoneNumber = cursor.getString(6) ?: "",
+                isValid = (cursor.getLong(7) ?: 0L) == 1L,
+                isFrozen = (cursor.getLong(8) ?: 0L) == 1L,
+                contacts = cursor.getString(9) ?: "[]"
             )
         }
     }
@@ -138,18 +142,19 @@ class UserRepositoryImpl(
         }
 
         return database.getAll(
-            "SELECT officerId, firstName, lastName, center, role, phoneNumber, isValid, isFrozen, contacts FROM User WHERE isValid = 1 AND isFrozen = 0"
+            "SELECT id, officerId, firstName, lastName, center, role, phoneNumber, isValid, isFrozen, contacts FROM User WHERE isValid = 1 AND isFrozen = 0"
         ) { cursor ->
             User(
-                officerId = cursor.getString(0) ?: "",
-                firstName = cursor.getString(1) ?: "",
-                lastName = cursor.getString(2) ?: "",
-                center = cursor.getString(3) ?: "",
-                role = cursor.getString(4) ?: "",
-                phoneNumber = cursor.getString(5) ?: "",
-                isValid = (cursor.getLong(6) ?: 0L) == 1L,
-                isFrozen = (cursor.getLong(7) ?: 0L) == 1L,
-                contacts = cursor.getString(8) ?: "[]"
+                id = cursor.getString(0) ?: "",
+                officerId = cursor.getString(1) ?: "",
+                firstName = cursor.getString(2) ?: "",
+                lastName = cursor.getString(3) ?: "",
+                center = cursor.getString(4) ?: "",
+                role = cursor.getString(5) ?: "",
+                phoneNumber = cursor.getString(6) ?: "",
+                isValid = (cursor.getLong(7) ?: 0L) == 1L,
+                isFrozen = (cursor.getLong(8) ?: 0L) == 1L,
+                contacts = cursor.getString(9) ?: "[]"
             )
         }
     }

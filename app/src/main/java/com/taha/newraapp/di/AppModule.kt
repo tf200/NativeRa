@@ -50,6 +50,7 @@ val appModule = module {
     // ===========================================
     single { com.taha.newraapp.data.socket.SocketManager(get()) }
     single { com.taha.newraapp.data.socket.ChatSocketService(get()) }
+    single { com.taha.newraapp.data.socket.MessageSyncService(get(), get(), get()) }
 
     // ===========================================
     // Use Cases
@@ -109,7 +110,9 @@ val databaseModule = module {
             androidContext(),
             com.taha.newraapp.data.local.LocalDatabase::class.java,
             "newra_local.db"
-        ).build()
+        )
+        .fallbackToDestructiveMigration()  // Handles schema changes during development
+        .build()
     }
     
     // DAOs
@@ -117,7 +120,7 @@ val databaseModule = module {
     
     // Repositories
     single<com.taha.newraapp.domain.repository.MessageRepository> { 
-        com.taha.newraapp.data.repository.MessageRepositoryImpl(get()) 
+        com.taha.newraapp.data.repository.MessageRepositoryImpl(get(), get()) 
     }
     
     // UseCases

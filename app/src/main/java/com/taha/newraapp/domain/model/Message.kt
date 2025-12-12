@@ -12,7 +12,7 @@ data class Message(
 )
 
 enum class MessageType {
-    TEXT, IMAGE, FILE
+    text, media
 }
 
 enum class MessageStatus {

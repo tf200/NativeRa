@@ -4,33 +4,26 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.taha.newraapp.data.socket.ChatSocketService
-import com.taha.newraapp.data.socket.MessageAckResult
+import com.taha.newraapp.data.socket.MessageSyncService
 import com.taha.newraapp.data.socket.SocketManager
 import com.taha.newraapp.data.socket.SocketStatus
-import com.taha.newraapp.data.socket.model.SocketMessagePayload
 import com.taha.newraapp.domain.model.Message
-import com.taha.newraapp.domain.model.MessageStatus
-import com.taha.newraapp.domain.model.MessageType
 import com.taha.newraapp.domain.model.User
 import com.taha.newraapp.domain.repository.MessageRepository
 import com.taha.newraapp.domain.repository.UserRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 class ChatViewModel(
     savedStateHandle: SavedStateHandle,
     private val messageRepository: MessageRepository,
     private val userRepository: UserRepository,
-    private val chatSocketService: ChatSocketService,
-    private val socketManager: SocketManager
+    private val socketManager: SocketManager,
+    private val messageSyncService: MessageSyncService
 ) : ViewModel() {
 
     companion object {
         private const val TAG = "ChatViewModel"
-        // TODO: Get this from device info storage
-        private const val DEVICE_ID = "android-device"
     }
 
     private val chatId: String = checkNotNull(savedStateHandle["chatId"])
@@ -44,81 +37,90 @@ class ChatViewModel(
     private val _chatPartnerUser = MutableStateFlow<User?>(null)
     val chatPartnerUser = _chatPartnerUser.asStateFlow()
 
-    private val _isSending = MutableStateFlow(false)
-    val isSending = _isSending.asStateFlow()
-
     private val _sendError = MutableStateFlow<String?>(null)
     val sendError = _sendError.asStateFlow()
 
     // Socket connection status
     val connectionStatus: StateFlow<SocketStatus> = socketManager.connectionStatus
 
-    // Messages from local database
+    // Messages from local database (this is now the single source of truth)
+    // Includes PENDING, SENT, DELIVERED, READ, and FAILED statuses
     val messages: StateFlow<List<Message>> = messageRepository.getMessages(chatId)
+        .onEach { msgs ->
+            Log.d(TAG, "Messages list updated from repository: count=${msgs.size}")
+            if (msgs.isNotEmpty()) {
+                val lastMsg = msgs.last()
+                Log.d(TAG, "Last message: id=${lastMsg.id}, status=${lastMsg.status}, content='${lastMsg.content}'")
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
-    // Pending messages (optimistic UI)
-    private val _pendingMessages = MutableStateFlow<List<Message>>(emptyList())
-    val pendingMessages = _pendingMessages.asStateFlow()
-
-    // Combined messages (database + pending)
-    val allMessages: StateFlow<List<Message>> = combine(messages, pendingMessages) { dbMessages, pending ->
-        (dbMessages + pending).sortedBy { it.timestamp }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
-
     init {
-        loadData()
-        observeIncomingMessages()
-        observeMessageAcknowledgments()
+        loadDataAndInitSync()
     }
 
-    private fun loadData() {
+    /**
+     * Load user data first, then initialize message sync.
+     * Order matters: we need currentUserId before starting incoming listener.
+     */
+    private fun loadDataAndInitSync() {
         viewModelScope.launch {
+            // Load current user first
             _currentUser.value = userRepository.getCurrentUser()
             val users = userRepository.getAllUsers()
-            _chatPartnerUser.value = users.find { it.officerId == chatId }
+            _chatPartnerUser.value = users.find { it.id == chatId }
+
+            // Set currentUserId on MessageSyncService for incoming message handling
+            _currentUser.value?.let { user ->
+                messageSyncService.setCurrentUserId(user.id)
+                Log.d(TAG, "Set current user ID for message sync: ${user.id}")
+            }
+
+            // Start observing connection status
+            startMessageSync()
         }
     }
 
     /**
-     * Observe incoming messages from Socket.IO and save to local database.
+     * Start the MessageSyncService to process pending messages, incoming messages,
+     * and delivery confirmations. This runs while the ViewModel is alive.
      */
-    private fun observeIncomingMessages() {
+    private fun startMessageSync() {
         viewModelScope.launch {
-            chatSocketService.incomingMessages.collect { payload ->
-                handleIncomingMessage(payload)
+            // Start sync when socket connects
+            connectionStatus.collect { status ->
+                if (status == SocketStatus.CONNECTED) {
+                    Log.d(TAG, "Socket connected, starting message sync")
+                    messageSyncService.startSync()
+                    messageSyncService.startIncomingMessageListener()
+                    messageSyncService.startDeliveryConfirmationListener()
+                    messageSyncService.startSeenConfirmationListener()
+                } else {
+                    Log.d(TAG, "Socket disconnected, stopping message sync")
+                    messageSyncService.stopSync()
+                    messageSyncService.stopIncomingListener()
+                    messageSyncService.stopDeliveryListener()
+                    messageSyncService.stopSeenListener()
+                }
             }
         }
     }
 
     /**
-     * Observe message acknowledgments and update pending messages.
+     * Mark all unread messages from the chat partner as seen/read.
+     * Called when the chat room is opened/visible.
      */
-    private fun observeMessageAcknowledgments() {
+    fun markMessagesAsSeen() {
         viewModelScope.launch {
-            chatSocketService.messageAcknowledged.collect { result ->
-                when (result) {
-                    is MessageAckResult.Success -> {
-                        Log.d(TAG, "Message sent successfully: ${result.messageId}")
-                        // Remove from pending - the message will appear from database sync
-                        removePendingMessage(result.localId)
-                        _isSending.value = false
-                    }
-                    is MessageAckResult.Failure -> {
-                        Log.e(TAG, "Message send failed: ${result.error}")
-                        markPendingAsFailed(result.localId)
-                        _sendError.value = result.error
-                        _isSending.value = false
-                    }
-                }
+            try {
+                messageSyncService.markMessagesAsSeen(chatId)
+                Log.d(TAG, "Marked messages as seen for chat: $chatId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error marking messages as seen", e)
             }
         }
     }
@@ -128,6 +130,10 @@ class ChatViewModel(
         _sendError.value = null
     }
 
+    /**
+     * Send a message - saves to Room first, then MessageSyncService handles sending.
+     * This ensures messages are never lost even if the app crashes.
+     */
     fun sendMessage() {
         val content = _messageInput.value.trim()
         if (content.isBlank()) return
@@ -142,89 +148,69 @@ class ChatViewModel(
             return
         }
 
-        _isSending.value = true
         _sendError.value = null
 
-        // Send via Socket.IO
-        val localId = chatSocketService.sendTextMessage(
-            content = content,
-            senderId = sender.officerId,
-            senderName = "${sender.firstName} ${sender.lastName}",
-            receiverIds = listOf(receiver.officerId),
-            deviceId = DEVICE_ID,
-            roomId = chatId
-        )
-
-        // Add to pending messages for optimistic UI
-        val pendingMessage = Message(
-            id = "pending_$localId",
-            conversationId = chatId,
-            senderId = sender.officerId,
-            recipientId = receiver.officerId,
-            content = content,
-            type = MessageType.TEXT,
-            status = MessageStatus.PENDING,
-            timestamp = System.currentTimeMillis()
-        )
-        _pendingMessages.value = _pendingMessages.value + pendingMessage
-
-        // Clear input immediately for better UX
-        _messageInput.value = ""
+        viewModelScope.launch {
+            try {
+                // Save to Room with PENDING status
+                // MessageSyncService will pick it up and send via socket
+                messageRepository.sendMessage(
+                    peerId = receiver.id,
+                    content = content
+                )
+                
+                // Clear input immediately for better UX
+                _messageInput.value = ""
+                
+                Log.d(TAG, "Message queued for sending to ${receiver.id}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error queuing message", e)
+                _sendError.value = "Failed to queue message: ${e.message}"
+            }
+        }
     }
 
     fun clearError() {
         _sendError.value = null
     }
 
-    fun retryFailedMessage(localId: Long) {
-        // Find the failed message and retry
-        val failedMessage = _pendingMessages.value.find { 
-            it.id == "pending_$localId" || it.id == "failed_$localId" 
-        }
-        
-        if (failedMessage != null) {
-            // Remove the failed message
-            removePendingMessage(localId)
-            
-            // Set the input and trigger send
-            _messageInput.value = failedMessage.content
-            sendMessage()
-        }
-    }
-
-    private fun handleIncomingMessage(payload: SocketMessagePayload) {
+    /**
+     * Retry a failed message.
+     */
+    fun retryFailedMessage(messageId: String) {
         viewModelScope.launch {
             try {
-                val socketMessage = payload.message
-                val metadata = socketMessage.metadata
-
-                // Only process if this message is for the current chat
-                if (metadata.sender == chatId || metadata.receivers.contains(_currentUser.value?.officerId)) {
-                    // Save to local database
-                    messageRepository.sendMessage(
-                        peerId = if (metadata.sender == _currentUser.value?.officerId) 
-                            metadata.receivers.firstOrNull() ?: chatId 
-                        else metadata.sender,
-                        content = socketMessage.content ?: ""
-                    )
-                }
+                messageSyncService.retryFailedMessage(messageId)
+                Log.d(TAG, "Retrying failed message: $messageId")
             } catch (e: Exception) {
-                Log.e(TAG, "Error handling incoming message", e)
+                Log.e(TAG, "Error retrying message", e)
+                _sendError.value = "Failed to retry: ${e.message}"
             }
         }
     }
 
-    private fun removePendingMessage(localId: Long) {
-        _pendingMessages.value = _pendingMessages.value.filter { 
-            it.id != "pending_$localId" && it.id != "failed_$localId"
+    /**
+     * Delete a failed message (user gave up).
+     */
+    fun deleteFailedMessage(messageId: String) {
+        viewModelScope.launch {
+            try {
+                messageSyncService.deleteFailedMessage(messageId)
+                Log.d(TAG, "Deleted failed message: $messageId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error deleting message", e)
+            }
         }
     }
 
-    private fun markPendingAsFailed(localId: Long) {
-        _pendingMessages.value = _pendingMessages.value.map { msg ->
-            if (msg.id == "pending_$localId") {
-                msg.copy(id = "failed_$localId", status = MessageStatus.FAILED)
-            } else msg
-        }
+    // Note: Incoming messages are now handled by MessageSyncService.
+    // It receives from ChatSocketService.incomingMessages, saves to Room DB,
+    // and sends delivery acks. The UI automatically updates via Room Flow.
+
+    override fun onCleared() {
+        super.onCleared()
+        // Stop sync when ViewModel is cleared
+        messageSyncService.stopSync()
     }
 }
+
