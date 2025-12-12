@@ -68,6 +68,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taha.newraapp.R
+import com.taha.newraapp.ui.common.Language
+import com.taha.newraapp.ui.components.LanguageSelector
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -368,67 +370,4 @@ private fun LoginScreenContent(
     }
 }
 
-@Composable
-private fun LanguageSelector(
-    selectedLanguage: Language,
-    onLanguageSelected: (Language) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-    
-    Box(modifier = modifier) {
-        Surface(
-            onClick = { expanded = true },
-            shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-            ),
-            shadowElevation = 0.dp // Flat design
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Language,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = selectedLanguage.displayName,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
-        
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-        ) {
-            Language.entries.forEach { language ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = language.displayName,
-                            fontWeight = if (language == selectedLanguage) {
-                                FontWeight.Bold
-                            } else {
-                                FontWeight.Normal
-                            }
-                        )
-                    },
-                    onClick = {
-                        onLanguageSelected(language)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
-}
+// End of file

@@ -19,6 +19,12 @@ data class MessageEntity(
     val retryCount: Int = 0, // Number of send attempts
     val nextRetryAt: Long = 0L, // When to retry (0 = immediately, >0 = scheduled)
     
-    // Optional for media messages
-    val attachmentId: String? = null
+    // Attachment fields
+    val attachmentId: String? = null,              // Server attachment ID (after upload confirmed)
+    val attachmentLocalPath: String? = null,       // Local file path for display
+    val attachmentMimeType: String? = null,        // Actual MIME type (image/jpeg, video/mp4, etc.)
+    val attachmentFileType: String? = null,        // Display type: IMAGE, VIDEO, AUDIO, FILE
+    val attachmentFileName: String? = null,        // Original filename
+    val attachmentThumbnail: String? = null,       // BlurHash or base64 thumbnail for images
+    val attachmentSize: Long? = null               // File size in bytes
 )

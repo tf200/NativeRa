@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Internal storage directories for attachments -->
+    <files-path name="attachments" path="attachments/" />
+    <files-path name="pending_uploads" path="pending_uploads/" />
+    
+    <!-- Cache directory for temporary camera files -->
+    <cache-path name="camera" path="camera/" />
+</paths>

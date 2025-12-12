@@ -214,14 +214,11 @@ class SocketManager(
             dispatchEvent(SocketEvents.USER_TYPING, args)
         }
         
-        on(SocketEvents.USER_ONLINE) { args ->
-            Log.d(TAG, "User online event")
-            dispatchEvent(SocketEvents.USER_ONLINE, args)
-        }
-        
-        on(SocketEvents.USER_OFFLINE) { args ->
-            Log.d(TAG, "User offline event")
-            dispatchEvent(SocketEvents.USER_OFFLINE, args)
+        // Presence updates are now handled via targeted subscription
+        // (request:presence:subscribe / request:presence:unsubscribe)
+        on(SocketEvents.PRESENCE_UPDATE) { args ->
+            Log.d(TAG, "Presence update event")
+            dispatchEvent(SocketEvents.PRESENCE_UPDATE, args)
         }
     }
 
@@ -246,8 +243,10 @@ object SocketEvents {
     
     // User presence events
     const val USER_TYPING = "user:typing"
-    const val USER_ONLINE = "user:online"
-    const val USER_OFFLINE = "user:offline"
+    const val REQUEST_HEARTBEAT = "request:heartbeat"
+    const val PRESENCE_UPDATE = "action:presence:update"
+    const val REQUEST_PRESENCE_SUBSCRIBE = "request:presence:subscribe"
+    const val REQUEST_PRESENCE_UNSUBSCRIBE = "request:presence:unsubscribe"
     
     // Room events
     const val ROOM_JOIN = "room:join"

@@ -48,6 +48,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.taha.newraapp.R
 import com.taha.newraapp.ui.navigation.Screen
 import com.taha.newraapp.ui.theme.Amber500
 import com.taha.newraapp.ui.theme.Slate100
@@ -68,7 +70,7 @@ fun QuickAccessScreen(
         // Live Alerts Section
         // ===========================================
         item {
-            SectionHeader(title = "Live Alerts", action = "See All", onActionClick = { onNavigateTo(Screen.Alerts.route) })
+            SectionHeader(title = stringResource(R.string.quick_access_live_alerts), action = stringResource(R.string.quick_access_see_all), onActionClick = { onNavigateTo(Screen.Alerts.route) })
         }
         item {
             AlertCard(
@@ -101,14 +103,14 @@ fun QuickAccessScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 QuickActionItem(
-                    title = "Map",
+                    title = stringResource(R.string.quick_access_map),
                     icon = Icons.Default.Map,
                     iconColor = MaterialTheme.colorScheme.primary, // Purple
                     modifier = Modifier.weight(1f),
                     onClick = { onNavigateTo(Screen.GeoPosition.route) }
                 )
                 QuickActionItem(
-                    title = "Messages",
+                    title = stringResource(R.string.quick_access_messages),
                     icon = Icons.Default.Chat,
                     iconColor = MaterialTheme.colorScheme.primary, // Purple
                     badgeCount = 3,
@@ -124,14 +126,14 @@ fun QuickAccessScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 QuickActionItem(
-                    title = "Alerts",
+                    title = stringResource(R.string.quick_access_alerts),
                     icon = Icons.Default.Notifications,
                     iconColor = Amber500, // Amber/Yellow
                     modifier = Modifier.weight(1f),
                     onClick = { onNavigateTo(Screen.Alerts.route) }
                 )
                 QuickActionItem(
-                    title = "Settings",
+                    title = stringResource(R.string.quick_access_settings),
                     icon = Icons.Default.Settings,
                     iconColor = Color.Gray, // Gray
                     modifier = Modifier.weight(1f),
@@ -145,7 +147,7 @@ fun QuickAccessScreen(
         // ===========================================
         item {
             Spacer(modifier = Modifier.height(8.dp))
-            SectionHeader(title = "Recent Reports", action = "See All")
+            SectionHeader(title = stringResource(R.string.quick_access_recent_reports), action = stringResource(R.string.quick_access_see_all))
         }
         
         item {
@@ -251,7 +253,7 @@ fun AlertCard(severity: String, severityColor: Color, title: String, time: Strin
                     color = TestRaTheme.extendedColors.textPrimary
                 )
                 Text(
-                    text = "View Details >",
+                    text = stringResource(R.string.quick_access_view_details),
                     style = MaterialTheme.typography.labelMedium,
                     color = TestRaTheme.extendedColors.textPrimary,
                     modifier = Modifier.padding(top = 4.dp)
@@ -295,13 +297,13 @@ fun NewReportCard(onClick: () -> Unit) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text(
-                            text = "New Report",
+                            text = stringResource(R.string.quick_access_new_report),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                         Text(
-                            text = "Log Accident",
+                            text = stringResource(R.string.quick_access_log_accident),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                             color = Color.White.copy(alpha = 0.85f)

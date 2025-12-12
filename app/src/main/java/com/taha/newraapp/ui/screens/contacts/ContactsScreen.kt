@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.taha.newraapp.R
 import com.taha.newraapp.ui.theme.Slate100
 import com.taha.newraapp.ui.theme.TestRaTheme
 import org.koin.androidx.compose.koinViewModel
@@ -39,14 +41,14 @@ fun ContactsScreen(
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 Text(
-                    text = "Search contacts or messages...",
+                    text = stringResource(R.string.contacts_search_placeholder),
                     color = TestRaTheme.extendedColors.textMuted
                 )
             },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
+                    contentDescription = stringResource(R.string.contacts_search_icon_description),
                     tint = TestRaTheme.extendedColors.textMuted
                 )
             },
@@ -55,7 +57,7 @@ fun ContactsScreen(
                     IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
                         Icon(
                             imageVector = Icons.Default.Clear,
-                            contentDescription = "Clear search",
+                            contentDescription = stringResource(R.string.contacts_search_clear),
                             tint = TestRaTheme.extendedColors.textMuted
                         )
                     }
@@ -82,7 +84,7 @@ fun ContactsScreen(
             }
             is ContactsUiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Error: ${state.message}", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.contacts_error_prefix, state.message), color = MaterialTheme.colorScheme.error)
                 }
             }
             is ContactsUiState.Success -> {
@@ -93,7 +95,7 @@ fun ContactsScreen(
                     // No contacts at all
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            text = if (searchQuery.isEmpty()) "No contacts found" else "No results for '$searchQuery'",
+                            text = if (searchQuery.isEmpty()) stringResource(R.string.contacts_no_contacts_found) else stringResource(R.string.contacts_no_results_for, searchQuery),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -108,7 +110,7 @@ fun ContactsScreen(
                         if (hasRecentConversations) {
                             item {
                                 Text(
-                                    text = "RECENT CONVERSATIONS",
+                                    text = stringResource(R.string.contacts_header_recent),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = TestRaTheme.extendedColors.textMuted,
@@ -128,7 +130,7 @@ fun ContactsScreen(
                             item {
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "ALL CONTACTS",
+                                    text = stringResource(R.string.contacts_header_all),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = TestRaTheme.extendedColors.textMuted,

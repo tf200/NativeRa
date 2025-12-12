@@ -113,5 +113,11 @@ interface MessageDao {
      */
     @Query("UPDATE messages SET status = 'READ' WHERE id IN (:messageIds)")
     suspend fun markMessagesAsRead(messageIds: List<String>)
+
+    /**
+     * Update the attachment ID for a message after upload is confirmed.
+     */
+    @Query("UPDATE messages SET attachmentId = :attachmentId WHERE id = :messageId")
+    suspend fun updateAttachmentId(messageId: String, attachmentId: String)
 }
 

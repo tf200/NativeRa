@@ -1,10 +1,14 @@
 package com.taha.newraapp.ui.screens.chat
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taha.newraapp.data.model.UserPresenceStatus
+import com.taha.newraapp.data.repository.AttachmentRepository
 import com.taha.newraapp.data.socket.MessageSyncService
+import com.taha.newraapp.data.socket.PresenceService
 import com.taha.newraapp.data.socket.SocketManager
 import com.taha.newraapp.data.socket.SocketStatus
 import com.taha.newraapp.domain.model.Message
@@ -19,7 +23,9 @@ class ChatViewModel(
     private val messageRepository: MessageRepository,
     private val userRepository: UserRepository,
     private val socketManager: SocketManager,
-    private val messageSyncService: MessageSyncService
+    private val messageSyncService: MessageSyncService,
+    private val presenceService: PresenceService,
+    private val attachmentRepository: AttachmentRepository
 ) : ViewModel() {
 
     companion object {
@@ -42,6 +48,15 @@ class ChatViewModel(
 
     // Socket connection status
     val connectionStatus: StateFlow<SocketStatus> = socketManager.connectionStatus
+
+    // Chat partner's online presence (derived from global presence state)
+    val chatPartnerPresence: StateFlow<UserPresenceStatus?> = presenceService.presenceState
+        .map { it[chatId] }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
 
     // Messages from local database (this is now the single source of truth)
     // Includes PENDING, SENT, DELIVERED, READ, and FAILED statuses
@@ -82,6 +97,12 @@ class ChatViewModel(
 
             // Start observing connection status
             startMessageSync()
+
+            // Fetch initial presence status for chat partner (immediate feedback)
+            presenceService.fetchPresenceStatus(listOf(chatId))
+            
+            // Subscribe to real-time presence updates for chat partner (targeted updates)
+            presenceService.subscribeToPresence(listOf(chatId))
         }
     }
 
@@ -173,6 +194,42 @@ class ChatViewModel(
     fun clearError() {
         _sendError.value = null
     }
+    
+    /**
+     * Send an attachment - prepares file and queues for upload.
+     * The AttachmentRepository handles file copying, message creation, and WorkManager upload.
+     * MessageSyncService will automatically send the message once upload completes.
+     * 
+     * @param uri Content URI of the file to send
+     * @param fileType Display type (IMAGE, VIDEO, AUDIO, FILE)
+     */
+    fun sendAttachment(uri: Uri, fileType: String) {
+        val sender = _currentUser.value ?: run {
+            _sendError.value = "User not loaded"
+            return
+        }
+
+        val receiver = _chatPartnerUser.value ?: run {
+            _sendError.value = "Chat partner not found"
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val messageId = attachmentRepository.prepareAttachment(
+                    uri = uri,
+                    fileType = fileType,
+                    conversationId = receiver.id,
+                    senderId = sender.id,
+                    recipientId = receiver.id
+                )
+                Log.d(TAG, "Attachment queued for upload: $messageId, type: $fileType")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending attachment", e)
+                _sendError.value = "Failed to send attachment: ${e.message}"
+            }
+        }
+    }
 
     /**
      * Retry a failed message.
@@ -211,6 +268,9 @@ class ChatViewModel(
         super.onCleared()
         // Stop sync when ViewModel is cleared
         messageSyncService.stopSync()
+        
+        // Unsubscribe from chat partner's presence updates
+        presenceService.unsubscribeFromPresence(listOf(chatId))
     }
 }
 

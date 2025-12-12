@@ -2,6 +2,7 @@ package com.taha.newraapp.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,18 +39,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.taha.newraapp.domain.model.User
 import com.taha.newraapp.ui.navigation.Screen
 import com.taha.newraapp.ui.theme.TestRaTheme
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScaffold(
     navController: NavHostController,
+    viewModel: ScaffoldViewModel = koinViewModel(),
     content: @Composable () -> Unit
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val currentScreen = Screen.items.find { it.route == currentRoute }
+    val currentUser by viewModel.currentUser.collectAsState()
 
     // Logic to determine if we should show the TopBar
     val showTopBar = currentRoute != Screen.Login.route && currentRoute != Screen.ChatRoom.route
@@ -57,7 +63,10 @@ fun MainScaffold(
         topBar = {
             if (showTopBar) {
                 if (currentRoute == Screen.QuickAccess.route || currentRoute == Screen.Home.route) {
-                    DashboardTopBar()
+                    DashboardTopBar(
+                        user = currentUser,
+                        onProfileClick = { navController.navigate(Screen.Profile.route) }
+                    )
                 } else if (currentRoute == Screen.Chat.route) {
                     // Messages screen TopBar
                     CenterAlignedTopAppBar(
@@ -137,7 +146,10 @@ fun MainScaffold(
 }
 
 @Composable
-fun DashboardTopBar() {
+fun DashboardTopBar(
+    user: User?,
+    onProfileClick: () -> Unit
+) {
     Surface(
         color = Color.White,
         shadowElevation = 0.dp,
@@ -150,37 +162,44 @@ fun DashboardTopBar() {
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar
-            Box(
+            // Clickable Avatar + Text Section
+            Row(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(TestRaTheme.extendedColors.headerBackground) // Purple bg
-                    .border(1.dp, Color.LightGray, CircleShape),
-                contentAlignment = Alignment.Center
+                    .clickable(onClick = onProfileClick),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Profile",
-                    tint = Color.White
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            // Text Info
-            Column {
-                Text(
-                    text = "Officer Ben Ali",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = TestRaTheme.extendedColors.textPrimary
-                )
-                Text(
-                    text = "Station: Tunis South",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TestRaTheme.extendedColors.textSecondary
-                )
+                // Avatar
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(TestRaTheme.extendedColors.headerBackground) // Purple bg
+                        .border(1.dp, Color.LightGray, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile",
+                        tint = Color.White
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                // Text Info - Dynamic from user
+                Column {
+                    Text(
+                        text = if (user != null) "${user.firstName} ${user.lastName}" else "Loading...",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = TestRaTheme.extendedColors.textPrimary
+                    )
+                    Text(
+                        text = if (user != null) "Station: ${user.center}" else "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TestRaTheme.extendedColors.textSecondary
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.weight(1f))
@@ -213,3 +232,4 @@ fun DashboardTopBar() {
         }
     }
 }
+

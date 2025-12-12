@@ -14,6 +14,7 @@ import java.util.UUID
 import androidx.lifecycle.viewModelScope
 import com.taha.newraapp.data.model.request.DeviceInfo
 import com.taha.newraapp.domain.usecase.LoginUseCase
+import com.taha.newraapp.ui.common.Language
 import kotlinx.coroutines.launch
 
 /**

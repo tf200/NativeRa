@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.process)
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
@@ -88,6 +89,9 @@ dependencies {
 
     // Socket.IO
     implementation(libs.socketio.client)
+
+    // WorkManager for background uploads
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Testing
     testImplementation(libs.junit)

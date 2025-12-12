@@ -2,19 +2,80 @@
     <string name="app_name">NewRa</string>
     
     <!-- Login Screen -->
-    <string name="login_title">Rapport d\'Accident de la Route</string>
+    <string name="login_title">Rapport d\'Accident Routier</string>
     <string name="login_subtitle">Gouvernement Tunisien - Application Officielle</string>
-    <string name="login_officer_id">Matricule Agent</string>
+    <string name="login_officer_id">Matricule</string>
     <string name="login_officer_id_hint">Entrez votre matricule</string>
     <string name="login_password">Mot de passe</string>
     <string name="login_password_hint">Entrez votre mot de passe</string>
-    <string name="login_button">Se Connecter</string>
+    <string name="login_button">Se connecter</string>
     <string name="login_loading">Connexion en cours…</string>
     <string name="login_forgot_password">Mot de passe oublié ?</string>
+    <string name="login_welcome_back">Bon retour</string>
+    <string name="login_sign_in_continue">Veuillez vous connecter pour continuer</string>
     <string name="login_error_empty_officer_id">Veuillez entrer votre matricule</string>
     <string name="login_error_empty_password">Veuillez entrer votre mot de passe</string>
     <string name="login_error_invalid_credentials">Identifiants invalides. Veuillez réessayer.</string>
+    <string name="login_signup_text">Pas de compte ? S\'inscrire</string>
     
+    <!-- Quick Access Screen -->
+    <string name="quick_access_live_alerts">Alertes en direct</string>
+    <string name="quick_access_see_all">Voir tout</string>
+    <string name="quick_access_view_details">Voir détails &gt;</string>
+    <string name="quick_access_new_report">Nouveau rapport</string>
+    <string name="quick_access_log_accident">Signaler un accident</string>
+    <string name="quick_access_map">Carte</string>
+    <string name="quick_access_messages">Messages</string>
+    <string name="quick_access_alerts">Alertes</string>
+    <string name="quick_access_settings">Paramètres</string>
+    <string name="quick_access_recent_reports">Rapports récents</string>
+    
+    <!-- Contacts Screen -->
+    <string name="contacts_search_placeholder">Rechercher des contacts ou messages...</string>
+    <string name="contacts_search_clear">Effacer la recherche</string>
+    <string name="contacts_search_icon_description">Rechercher</string>
+    <string name="contacts_error_prefix">Erreur : %s</string>
+    <string name="contacts_no_contacts_found">Aucun contact trouvé</string>
+    <string name="contacts_no_results_for">Aucun résultat pour \'%s\'</string>
+    <string name="contacts_header_recent">CONVERSATIONS RÉCENTES</string>
+    <string name="contacts_header_all">TOUS LES CONTACTS</string>
+
+    <!-- Chat Screen -->
+    <string name="chat_online">En ligne</string>
+    <string name="chat_offline">Hors ligne</string>
+    <string name="chat_last_seen_just_now">Vu à l\'instant</string>
+    <string name="chat_last_seen_minutes_ago">Vu il y a %dm</string>
+    <string name="chat_last_seen_hours_ago">Vu il y a %dh</string>
+    <string name="chat_last_seen_date">Vu le %s</string>
+    <string name="chat_loading">Chargement...</string>
+    <string name="chat_user_initials_fallback">?</string>
+    <string name="chat_message_sending">Envoi</string>
+    <string name="chat_message_sent">Envoyé</string>
+    <string name="chat_message_delivered">Distribué</string>
+    <string name="chat_message_read">Lu</string>
+    <string name="chat_message_failed">Échec</string>
+    <string name="chat_input_placeholder">Écrire un message...</string>
+    <string name="chat_send_description">Envoyer message</string>
+    <string name="chat_back_description">Retour</string>
+    <string name="chat_voice_call_description">Appel vocal</string>
+    <string name="chat_video_call_description">Appel vidéo</string>
+    <string name="chat_options_description">Plus d\'options</string>
+    <string name="chat_attach_description">Joindre fichier</string>
+    <string name="chat_dismiss">Ignorer</string>
+    <string name="chat_date_today">Aujourd\'hui</string>
+    <string name="chat_date_yesterday">Hier</string>
+    
+    <!-- Chat Attachments -->
+    <string name="chat_attach_camera">Caméra</string>
+    <string name="chat_attach_audio">Audio</string>
+    <string name="chat_attach_file">Fichier</string>
+    
+    <!-- Camera Dialog -->
+    <string name="chat_camera_dialog_title">Capturer</string>
+    <string name="chat_camera_dialog_message">Que souhaitez-vous capturer ?</string>
+    <string name="chat_camera_photo">Photo</string>
+    <string name="chat_camera_video">Vidéo</string>
+
     <!-- Language -->
     <string name="language_english">English</string>
     <string name="language_french">Français</string>

@@ -1,5 +1,7 @@
 package com.taha.newraapp.ui.screens.login
 
+import com.taha.newraapp.ui.common.Language
+
 /**
  * Login screen UI state.
  */
@@ -12,15 +14,6 @@ data class LoginUiState(
     val errorMessage: String? = null,
     val selectedLanguage: Language = Language.FRENCH
 )
-
-/**
- * Supported languages for the app.
- */
-enum class Language(val code: String, val displayName: String) {
-    ENGLISH("en", "English"),
-    FRENCH("fr", "Français"),
-    ARABIC("ar", "العربية")
-}
 
 /**
  * Login screen events.

@@ -145,6 +145,7 @@ fun NewRaNavHost(
             // ===========================================
             composable(Screen.Profile.route) {
                 ProfileScreen(
+                    onBack = { navController.navigateUp() },
                     onLogout = {
                         navController.navigate(Screen.Login.route) {
                             popUpTo(0) { inclusive = true }

@@ -18,6 +18,64 @@
     <string name="login_error_invalid_credentials">Invalid credentials. Please try again.</string>
     <string name="login_signup_text">Don\'t have an account? Sign up</string>
     
+    <!-- Quick Access Screen -->
+    <string name="quick_access_live_alerts">Live Alerts</string>
+    <string name="quick_access_see_all">See All</string>
+    <string name="quick_access_view_details">View Details &gt;</string>
+    <string name="quick_access_new_report">New Report</string>
+    <string name="quick_access_log_accident">Log Accident</string>
+    <string name="quick_access_map">Map</string>
+    <string name="quick_access_messages">Messages</string>
+    <string name="quick_access_alerts">Alerts</string>
+    <string name="quick_access_settings">Settings</string>
+    <string name="quick_access_recent_reports">Recent Reports</string>
+    
+    <!-- Contacts Screen -->
+    <string name="contacts_search_placeholder">Search contacts or messages...</string>
+    <string name="contacts_search_clear">Clear search</string>
+    <string name="contacts_search_icon_description">Search</string>
+    <string name="contacts_error_prefix">Error: %s</string>
+    <string name="contacts_no_contacts_found">No contacts found</string>
+    <string name="contacts_no_results_for">No results for \'%s\'</string>
+    <string name="contacts_header_recent">RECENT CONVERSATIONS</string>
+    <string name="contacts_header_all">ALL CONTACTS</string>
+
+    <!-- Chat Screen -->
+    <string name="chat_online">Online</string>
+    <string name="chat_offline">Offline</string>
+    <string name="chat_last_seen_just_now">Last seen just now</string>
+    <string name="chat_last_seen_minutes_ago">Last seen %dm ago</string>
+    <string name="chat_last_seen_hours_ago">Last seen %dh ago</string>
+    <string name="chat_last_seen_date">Last seen %s</string>
+    <string name="chat_loading">Loading...</string>
+    <string name="chat_user_initials_fallback">?</string>
+    <string name="chat_message_sending">Sending</string>
+    <string name="chat_message_sent">Sent</string>
+    <string name="chat_message_delivered">Delivered</string>
+    <string name="chat_message_read">Read</string>
+    <string name="chat_message_failed">Failed</string>
+    <string name="chat_input_placeholder">Type a message...</string>
+    <string name="chat_send_description">Send message</string>
+    <string name="chat_back_description">Back</string>
+    <string name="chat_voice_call_description">Voice call</string>
+    <string name="chat_video_call_description">Video call</string>
+    <string name="chat_options_description">More options</string>
+    <string name="chat_attach_description">Attach file</string>
+    <string name="chat_dismiss">Dismiss</string>
+    <string name="chat_date_today">Today</string>
+    <string name="chat_date_yesterday">Yesterday</string>
+    
+    <!-- Chat Attachments -->
+    <string name="chat_attach_camera">Camera</string>
+    <string name="chat_attach_audio">Audio</string>
+    <string name="chat_attach_file">File</string>
+    
+    <!-- Camera Dialog -->
+    <string name="chat_camera_dialog_title">Capture</string>
+    <string name="chat_camera_dialog_message">What would you like to capture?</string>
+    <string name="chat_camera_photo">Photo</string>
+    <string name="chat_camera_video">Video</string>
+
     <!-- Language -->
     <string name="language_english">English</string>
     <string name="language_french">Français</string>

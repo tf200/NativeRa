@@ -2,7 +2,9 @@ package com.taha.newraapp.di
 
 import com.taha.newraapp.data.local.TokenManager
 import com.taha.newraapp.data.network.AuthApi
+import com.taha.newraapp.data.network.AttachmentApi
 import com.taha.newraapp.data.network.AuthenticatedApiExecutor
+import com.taha.newraapp.data.network.ChatApi
 import com.taha.newraapp.data.repository.AuthRepositoryImpl
 import com.taha.newraapp.data.sync.PowerSyncManager
 import com.taha.newraapp.domain.repository.AuthRepository
@@ -11,6 +13,7 @@ import com.taha.newraapp.data.repository.UserRepositoryImpl
 import com.taha.newraapp.domain.repository.UserRepository
 import com.taha.newraapp.ui.screens.login.LoginViewModel
 import com.taha.newraapp.ui.screens.profile.ProfileViewModel
+import com.taha.newraapp.ui.components.ScaffoldViewModel
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -31,8 +34,9 @@ val appModule = module {
     // ===========================================
     viewModel { LoginViewModel(get()) }
     viewModel { ProfileViewModel(get(), get(), get()) }
+    viewModel { ScaffoldViewModel(get(), get()) }
     viewModel { com.taha.newraapp.ui.screens.contacts.ContactsViewModel(get()) }
-    viewModel { com.taha.newraapp.ui.screens.chat.ChatViewModel(get(), get(), get(), get(), get()) }
+    viewModel { com.taha.newraapp.ui.screens.chat.ChatViewModel(get(), get(), get(), get(), get(), get(), get()) }
     
     // ===========================================
     // Local Data
@@ -51,6 +55,7 @@ val appModule = module {
     single { com.taha.newraapp.data.socket.SocketManager(get()) }
     single { com.taha.newraapp.data.socket.ChatSocketService(get()) }
     single { com.taha.newraapp.data.socket.MessageSyncService(get(), get(), get()) }
+    single { com.taha.newraapp.data.socket.PresenceService(get(), get(), get()) }
 
     // ===========================================
     // Use Cases
@@ -81,6 +86,8 @@ val networkModule = module {
     }
 
     single { get<Retrofit>().create(AuthApi::class.java) }
+    single { get<Retrofit>().create(ChatApi::class.java) }
+    single { get<Retrofit>().create(AttachmentApi::class.java) }
     
     // Authenticated API Executor - handles token refresh for all API calls
     single { AuthenticatedApiExecutor(get(), get()) }
@@ -117,6 +124,22 @@ val databaseModule = module {
     
     // DAOs
     single { get<com.taha.newraapp.data.local.LocalDatabase>().messageDao() }
+    single { get<com.taha.newraapp.data.local.LocalDatabase>().pendingUploadDao() }
+    
+    // WorkManager
+    single { androidx.work.WorkManager.getInstance(androidContext()) }
+    
+    // Attachment Repository
+    single { 
+        com.taha.newraapp.data.repository.AttachmentRepository(
+            context = androidContext(),
+            pendingUploadDao = get(),
+            messageDao = get(),
+            attachmentApi = get(),
+            apiExecutor = get(),
+            workManager = get()
+        ) 
+    }
     
     // Repositories
     single<com.taha.newraapp.domain.repository.MessageRepository> { 
