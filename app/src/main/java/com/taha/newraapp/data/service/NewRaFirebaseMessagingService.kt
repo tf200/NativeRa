@@ -20,9 +20,11 @@ class NewRaFirebaseMessagingService : FirebaseMessagingService() {
     private val fcmTokenManager: FcmTokenManager by inject()
     private val authRepository: AuthRepository by inject()
     private val notificationManager: MessageNotificationManager by inject()
+    private val callNotificationManager: CallNotificationManager by inject()
     private val userRepository: com.taha.newraapp.domain.repository.UserRepository by inject()
     private val fcmMessageHandler: FcmMessageHandler by inject()
     private val powerSyncManager: com.taha.newraapp.data.sync.PowerSyncManager by inject()
+    private val socketManager: com.taha.newraapp.data.socket.SocketManager by inject()
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -53,6 +55,9 @@ class NewRaFirebaseMessagingService : FirebaseMessagingService() {
             when (message.data["type"]) {
                 "chat_message" -> {
                     handleChatMessage(message.data)
+                }
+                "incoming_call" -> {
+                    handleIncomingCall(message.data)
                 }
                 else -> {
                     Log.w(TAG, "Unknown FCM message type: ${message.data["type"]}")
@@ -115,6 +120,68 @@ class NewRaFirebaseMessagingService : FirebaseMessagingService() {
                 
             } catch (e: Exception) {
                 Log.e(TAG, "Error handling chat message from FCM", e)
+            }
+        }
+    }
+    
+    /**
+     * Handle incoming call from FCM.
+     * Data payload: type, callId, roomId, callType, callerId
+     */
+    private fun handleIncomingCall(data: Map<String, String>) {
+        serviceScope.launch {
+            try {
+                val callId = data["callId"] ?: run {
+                    Log.e(TAG, "Missing callId in incoming call data")
+                    return@launch
+                }
+                val roomId = data["roomId"] ?: ""
+                val callType = data["callType"] ?: "audio"
+                val callerId = data["callerId"] ?: run {
+                    Log.e(TAG, "Missing callerId in incoming call data")
+                    return@launch
+                }
+                
+                Log.i(TAG, ">>> Incoming call: $callId from $callerId ($callType)")
+                
+                // Initialize database if needed (for background wakeups)
+                if (powerSyncManager.database == null) {
+                    try {
+                        Log.d(TAG, "Initializing PowerSync for incoming call...")
+                        powerSyncManager.initialize(waitForSync = false)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to init PowerSync", e)
+                    }
+                }
+                
+                // Try to connect socket for WebSocket events
+                try {
+                    if (!socketManager.isConnected()) {
+                        Log.d(TAG, "Connecting socket for incoming call...")
+                        socketManager.connect()
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to connect socket", e)
+                }
+                
+                // Get caller name from database
+                val caller = userRepository.getUserById(callerId)
+                val callerName = caller?.let { "${it.firstName} ${it.lastName}".trim() }
+                    ?: "Incoming Call" // Fallback
+                
+                Log.d(TAG, "Showing call notification from: $callerName")
+                
+                // Show incoming call notification
+                callNotificationManager.showIncomingCallNotification(
+                    callId = callId,
+                    roomId = roomId,
+                    callType = callType,
+                    callerId = callerId,
+                    callerName = callerName
+                )
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Error handling incoming call from FCM", e)
             }
         }
     }

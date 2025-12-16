@@ -233,4 +233,15 @@ object SocketEvents {
     
     // Notification events
     const val NOTIFICATION = "notification"
+    
+    // Call events - client → server (requests)
+    const val REQUEST_CALL_ACCEPT = "request:call:accept"
+    const val REQUEST_CALL_REJECT = "request:call:reject"
+    const val REQUEST_CALL_END = "request:call:end"
+    
+    // Call events - server → client (actions)
+    const val ACTION_CALL_ACCEPTED = "action:call:accepted"
+    const val ACTION_CALL_REJECTED = "action:call:rejected"
+    const val ACTION_CALL_ENDED = "action:call:ended"
 }
+

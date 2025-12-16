@@ -5,8 +5,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class InitiateCallResponse(
+    @SerialName("success")
+    val success: Boolean,
     @SerialName("callId")
     val callId: String,
-    @SerialName("status")
-    val status: String  // "ringing"
+    @SerialName("error")
+    val error: String? = null
 )
+
+

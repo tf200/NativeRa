@@ -333,3 +333,92 @@ data class SeenReceipt(
     @SerialName("timestamp")
     val timestamp: String     // When they saw it
 )
+
+// ========================================
+// Call Socket Events
+// ========================================
+
+/**
+ * Request payload for accepting a call.
+ * Event: request:call:accept (we send this)
+ */
+@Serializable
+data class CallAcceptPayload(
+    @SerialName("callId")
+    val callId: String,
+    @SerialName("roomId")
+    val roomId: String
+)
+
+/**
+ * Request payload for rejecting a call.
+ * Event: request:call:reject (we send this)
+ */
+@Serializable
+data class CallRejectPayload(
+    @SerialName("callId")
+    val callId: String,
+    @SerialName("reason")
+    val reason: String? = null  // "busy", "declined", etc.
+)
+
+/**
+ * Request payload for ending a call.
+ * Event: request:call:end (we send this)
+ */
+@Serializable
+data class CallEndPayload(
+    @SerialName("callId")
+    val callId: String,
+    @SerialName("reason")
+    val reason: String? = null  // "hangup", "network_error", etc.
+)
+
+/**
+ * Action payload received when callee accepts a call.
+ * Event: action:call:accepted (we receive this)
+ */
+@Serializable
+data class CallAcceptedEvent(
+    @SerialName("type")
+    val type: String = "call_accepted",
+    @SerialName("callId")
+    val callId: String,
+    @SerialName("roomId")
+    val roomId: String,
+    @SerialName("acceptedBy")
+    val acceptedBy: String  // User ID who accepted
+)
+
+/**
+ * Action payload received when callee rejects a call.
+ * Event: action:call:rejected (we receive this)
+ */
+@Serializable
+data class CallRejectedEvent(
+    @SerialName("type")
+    val type: String = "call_rejected",
+    @SerialName("callId")
+    val callId: String,
+    @SerialName("rejectedBy")
+    val rejectedBy: String,  // User ID who rejected
+    @SerialName("reason")
+    val reason: String? = null
+)
+
+/**
+ * Action payload received when call is ended.
+ * Event: action:call:ended (we receive this)
+ */
+@Serializable
+data class CallEndedEvent(
+    @SerialName("type")
+    val type: String = "call_ended",
+    @SerialName("callId")
+    val callId: String,
+    @SerialName("endedBy")
+    val endedBy: String,  // User ID who ended the call
+    @SerialName("reason")
+    val reason: String? = null
+)
+

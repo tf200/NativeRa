@@ -38,7 +38,7 @@ class CallRepositoryImpl(
                 callApi.initiateCall(authorization, request)
             }
             
-            Log.d(TAG, "Call initiated successfully: callId=${response.callId}, status=${response.status}")
+            Log.d(TAG, "Call initiated: callId=${response.callId}, success=${response.success}")
             Result.success(response)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initiate call", e)

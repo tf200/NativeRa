@@ -11,6 +11,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
@@ -75,6 +78,25 @@
             android:exported="false"
             android:launchMode="singleTop"
             android:theme="@style/Theme.NewRaApp" />
+        
+        <!-- Incoming Call Activity - Full screen over lock screen -->
+        <activity
+            android:name=".ui.screens.call.IncomingCallActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:showOnLockScreen="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.NewRaApp" />
+        
+        <!-- Call Action Receiver - handles notification button actions -->
+        <receiver
+            android:name=".data.service.CallActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.taha.newraapp.DECLINE_CALL" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

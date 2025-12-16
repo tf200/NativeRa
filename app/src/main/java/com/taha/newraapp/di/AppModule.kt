@@ -80,6 +80,7 @@ val appModule = module {
     single { com.taha.newraapp.data.socket.MessageSyncService(get(), get(), get(), get(), get()) }
     single { com.taha.newraapp.data.socket.PresenceService(get(), get(), get()) }
     single { com.taha.newraapp.data.socket.TypingService(get()) }
+    single { com.taha.newraapp.data.socket.CallSocketService(get()) }
     // GlobalMessageHandler - starts message listeners at app level (not screen level)
     single { com.taha.newraapp.data.socket.GlobalMessageHandler(get(), get(), get(), get(), get()) }
     
@@ -91,6 +92,9 @@ val appModule = module {
     
     // MessageNotificationManager - handles WhatsApp-style notifications
     single { com.taha.newraapp.data.service.MessageNotificationManager(androidContext(), get()) }
+    
+    // CallNotificationManager - handles incoming call notifications
+    single { com.taha.newraapp.data.service.CallNotificationManager(androidContext()) }
     
     // JitsiMeetManager - handles video/audio calls via Jitsi Meet SDK
     single { com.taha.newraapp.data.call.JitsiMeetManager(androidContext()) }
