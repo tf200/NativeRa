@@ -26,5 +26,6 @@ data class MessageEntity(
     val attachmentFileType: String? = null,        // Display type: IMAGE, VIDEO, AUDIO, FILE
     val attachmentFileName: String? = null,        // Original filename
     val attachmentThumbnail: String? = null,       // BlurHash or base64 thumbnail for images
-    val attachmentSize: Long? = null               // File size in bytes
+    val attachmentSize: Long? = null,              // File size in bytes
+    val downloadStatus: String? = null             // NOT_STARTED, PENDING, DOWNLOADING, COMPLETE, FAILED
 )

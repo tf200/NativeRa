@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.dp
 import com.taha.newraapp.domain.usecase.ContactUiModel
 import com.taha.newraapp.ui.theme.Slate100
 import com.taha.newraapp.ui.theme.TestRaTheme
+import androidx.compose.ui.res.stringResource
+import com.taha.newraapp.R
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -25,13 +27,14 @@ import java.util.*
 fun MessageItem(
     contact: ContactUiModel,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isTyping: Boolean = false
 ) {
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Slate100),
+        colors = CardDefaults.cardColors(containerColor = TestRaTheme.extendedColors.cardBackground),
+        border = BorderStroke(1.dp, TestRaTheme.extendedColors.border),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = modifier.fillMaxWidth()
     ) {
@@ -57,7 +60,7 @@ fun MessageItem(
                             .size(14.dp)
                             .clip(CircleShape)
                             .background(Color(0xFF4CAF50)) // Green
-                            .border(2.dp, Color.White, CircleShape)
+                            .border(2.dp, TestRaTheme.extendedColors.cardBackground, CircleShape)
                     )
                 }
             }
@@ -77,14 +80,26 @@ fun MessageItem(
                 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                Text(
-                    text = contact.lastMessage ?: contact.center,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (contact.unreadCount > 0) TestRaTheme.extendedColors.textPrimary else TestRaTheme.extendedColors.textMuted,
-                    fontWeight = if (contact.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                // Show "typing..." or last message
+                if (isTyping) {
+                    Text(
+                        text = stringResource(R.string.chat_typing),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                } else {
+                    Text(
+                        text = contact.lastMessage ?: contact.center,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (contact.unreadCount > 0) TestRaTheme.extendedColors.textPrimary else TestRaTheme.extendedColors.textMuted,
+                        fontWeight = if (contact.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.width(8.dp))
@@ -170,7 +185,7 @@ fun ContactAvatar(name: String) {
 private fun formatTime(timestamp: Long): String {
     val now = System.currentTimeMillis()
     val diff = now - timestamp
-    val date = Date(timestamp)
+    Date(timestamp)
     
     return when {
         diff < 60 * 60 * 1000 -> { // Less than 1 hour

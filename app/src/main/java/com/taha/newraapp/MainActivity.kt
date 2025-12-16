@@ -11,15 +11,18 @@ import com.taha.newraapp.ui.navigation.NewRaNavHost
 import com.taha.newraapp.ui.theme.TestRaTheme
 
 import androidx.appcompat.app.AppCompatActivity
+import org.koin.compose.KoinContext
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            TestRaTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    NewRaNavHost()
+            KoinContext {
+                TestRaTheme {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        NewRaNavHost()
+                    }
                 }
             }
         }

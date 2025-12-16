@@ -16,6 +16,7 @@ class TokenManager(private val context: Context) {
     companion object {
         private val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
         private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
+        private val DEVICE_ID_KEY = stringPreferencesKey("device_id")
     }
 
     val accessToken: Flow<String?> = context.dataStore.data.map { preferences ->
@@ -26,6 +27,10 @@ class TokenManager(private val context: Context) {
         preferences[REFRESH_TOKEN_KEY]
     }
 
+    val deviceId: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[DEVICE_ID_KEY]
+    }
+
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
         context.dataStore.edit { preferences ->
             preferences[ACCESS_TOKEN_KEY] = accessToken
@@ -33,10 +38,17 @@ class TokenManager(private val context: Context) {
         }
     }
 
+    suspend fun saveDeviceId(deviceId: String) {
+        context.dataStore.edit { preferences ->
+            preferences[DEVICE_ID_KEY] = deviceId
+        }
+    }
+
     suspend fun clearTokens() {
         context.dataStore.edit { preferences ->
             preferences.remove(ACCESS_TOKEN_KEY)
             preferences.remove(REFRESH_TOKEN_KEY)
+            preferences.remove(DEVICE_ID_KEY)
         }
     }
 }

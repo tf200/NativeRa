@@ -58,9 +58,9 @@ val LightProgressBarBackground = Color(0xFFF3F4F6)
 val LightFloatingButton = Color(0xFF6750A4)
 val LightFloatingButtonText = Color(0xFFFFFFFF)
 
-// ========== DARK MODE COLORS ==========
-val DarkPrimary = Color(0xFFD0BCFF)
-val DarkOnPrimary = Color(0xFF381E72)
+// ========== DARK MODE COLORS (OLED Optimized) ==========
+val DarkPrimary = Color(0xFF6750A4)          // Deep Purple (same as light)
+val DarkOnPrimary = Color(0xFFFFFFFF)        // White text on purple
 val DarkPrimaryContainer = Color(0xFF4F378B)
 val DarkOnPrimaryContainer = Color(0xFFEADDFF)
 
@@ -74,12 +74,12 @@ val DarkOnTertiary = Color(0xFF492532)
 val DarkTertiaryContainer = Color(0xFF633B48)
 val DarkOnTertiaryContainer = Color(0xFFFFD8E4)
 
-val DarkBackground = Color(0xFF1C1B1F)
+val DarkBackground = Color(0xFF000000)       // True black for OLED
 val DarkOnBackground = Color(0xFFE6E1E5)
 
-val DarkSurface = Color(0xFF1C1B1F)
+val DarkSurface = Color(0xFF000000)          // True black for OLED
 val DarkOnSurface = Color(0xFFE6E1E5)
-val DarkSurfaceVariant = Color(0xFF49454F)
+val DarkSurfaceVariant = Color(0xFF1C1B1F)   // Slightly elevated surface
 val DarkOnSurfaceVariant = Color(0xFFCAC4D0)
 
 val DarkError = Color(0xFFF2B8B5)
@@ -96,16 +96,16 @@ val DarkInversePrimary = Color(0xFF6750A4)
 
 val DarkScrim = Color(0xFF000000)
 
-// Custom Dark Mode Colors
-val DarkCardBackground = Color(0xFF2B2930)
+// Custom Dark Mode Colors (OLED Optimized)
+val DarkCardBackground = Color(0xFF121212)   // Near-black card background
 val DarkTextPrimary = Color(0xFFE6E1E5)
 val DarkTextSecondary = Color(0xFFCAC4D0)
 val DarkTextMuted = Color(0xFF938F99)
-val DarkBorder = Color(0xFF938F99)
-val DarkHeaderBackground = Color(0xFF381E72)
-val DarkProgressBarBackground = Color(0xFF49454F)
-val DarkFloatingButton = Color(0xFFD0BCFF)
-val DarkFloatingButtonText = Color(0xFF381E72)
+val DarkBorder = Color(0xFF2D2D2D)           // Subtle border on black
+val DarkHeaderBackground = Color(0xFF6750A4) // Deep Purple (matches light)
+val DarkProgressBarBackground = Color(0xFF1C1B1F)
+val DarkFloatingButton = Color(0xFF6750A4)   // Deep Purple
+val DarkFloatingButtonText = Color(0xFFFFFFFF)
 
 // ========== OPACITY VALUES ==========
 // Use these for subtle backgrounds and hover effects

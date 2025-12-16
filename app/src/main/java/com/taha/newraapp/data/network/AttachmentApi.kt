@@ -1,5 +1,6 @@
 package com.taha.newraapp.data.network
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -67,9 +68,13 @@ interface AttachmentApi {
  */
 @Serializable
 data class RequestUploadBody(
+    @SerialName("filename")
     val filename: String,
+    @SerialName("mimeType")
     val mimeType: String,
+    @SerialName("fileType")
     val fileType: String,  // IMAGE, VIDEO, AUDIO, FILE
+    @SerialName("size")
     val size: Long         // Max 50MB
 )
 
@@ -79,8 +84,11 @@ data class RequestUploadBody(
  */
 @Serializable
 data class RequestUploadResponse(
+    @SerialName("uploadUrl")
     val uploadUrl: String,
+    @SerialName("key")
     val key: String,
+    @SerialName("expiresAt")
     val expiresAt: String  // ISO 8601 datetime
 )
 
@@ -90,10 +98,15 @@ data class RequestUploadResponse(
  */
 @Serializable
 data class ConfirmUploadBody(
+    @SerialName("key")
     val key: String,
+    @SerialName("filename")
     val filename: String,
+    @SerialName("mimeType")
     val mimeType: String,
+    @SerialName("fileType")
     val fileType: String,  // IMAGE, VIDEO, AUDIO, FILE
+    @SerialName("size")
     val size: Long
 )
 
@@ -102,7 +115,9 @@ data class ConfirmUploadBody(
  */
 @Serializable
 data class ConfirmUploadResponse(
+    @SerialName("id")
     val id: String,        // The attachment ID to use in messages
+    @SerialName("url")
     val url: String? = null // Optional: CDN URL for the file
 )
 
@@ -112,10 +127,16 @@ data class ConfirmUploadResponse(
  */
 @Serializable
 data class DownloadResponse(
+    @SerialName("downloadUrl")
     val downloadUrl: String,
+    @SerialName("filename")
     val filename: String,
+    @SerialName("mimeType")
     val mimeType: String,
+    @SerialName("fileType")
     val fileType: String,  // IMAGE, VIDEO, AUDIO, FILE
+    @SerialName("size")
     val size: Long,
+    @SerialName("expiresAt")
     val expiresAt: String  // ISO 8601 datetime
 )

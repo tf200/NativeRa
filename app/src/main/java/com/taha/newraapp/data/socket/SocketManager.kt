@@ -54,7 +54,7 @@ class SocketManager(
             return
         }
 
-        val token = tokenManager.accessToken.first()
+        val token = tokenManager.refreshToken.first()
         if (token.isNullOrBlank()) {
             Log.e(TAG, "Cannot connect: No access token available")
             _lastError.value = "No access token available"
@@ -71,9 +71,10 @@ class SocketManager(
                 auth = mapOf("token" to token)
                 transports = arrayOf("websocket", "polling")
                 reconnection = true
-                reconnectionAttempts = 5
-                reconnectionDelay = 1000
-                reconnectionDelayMax = 5000
+                reconnectionAttempts = Int.MAX_VALUE  // Never give up
+                reconnectionDelay = 1000               // Start at 1 second
+                reconnectionDelayMax = 30000           // Max 30 seconds between retries
+                randomizationFactor = 0.5              // Add jitter to prevent thundering herd
                 timeout = 20000
             }
 
@@ -83,9 +84,17 @@ class SocketManager(
                 on(Socket.EVENT_DISCONNECT, onDisconnect)
                 on(Socket.EVENT_CONNECT_ERROR, onConnectError)
                 
-                // Register application-specific events
-                registerDefaultEvents()
-                
+                // Register all stored event handlers
+                eventHandlers.forEach { (event, handlers) ->
+                    on(event) { args ->
+                        if (args.isNotEmpty()) {
+                            handlers.forEach { handler ->
+                                handler(args[0])
+                            }
+                        }
+                    }
+                }
+
                 connect()
             }
 
@@ -146,6 +155,8 @@ class SocketManager(
      */
     fun on(event: String, handler: (Any) -> Unit) {
         eventHandlers.getOrPut(event) { mutableListOf() }.add(handler)
+        
+        // If socket is already connected, register this handler immediately
         socket?.on(event) { args ->
             if (args.isNotEmpty()) {
                 handler(args[0])
@@ -188,40 +199,6 @@ class SocketManager(
     // Application Event Registration
     // ===========================================
 
-    /**
-     * Register default application events.
-     * Add new event handlers here as the application grows.
-     */
-    private fun Socket.registerDefaultEvents() {
-        // Chat events
-        on(SocketEvents.MESSAGE_RECEIVED) { args ->
-            Log.d(TAG, "Received message event")
-            dispatchEvent(SocketEvents.MESSAGE_RECEIVED, args)
-        }
-        
-        on(SocketEvents.MESSAGE_SENT) { args ->
-            Log.d(TAG, "Message sent confirmation")
-            dispatchEvent(SocketEvents.MESSAGE_SENT, args)
-        }
-        
-        on(SocketEvents.MESSAGE_READ) { args ->
-            Log.d(TAG, "Message read event")
-            dispatchEvent(SocketEvents.MESSAGE_READ, args)
-        }
-        
-        on(SocketEvents.USER_TYPING) { args ->
-            Log.d(TAG, "User typing event")
-            dispatchEvent(SocketEvents.USER_TYPING, args)
-        }
-        
-        // Presence updates are now handled via targeted subscription
-        // (request:presence:subscribe / request:presence:unsubscribe)
-        on(SocketEvents.PRESENCE_UPDATE) { args ->
-            Log.d(TAG, "Presence update event")
-            dispatchEvent(SocketEvents.PRESENCE_UPDATE, args)
-        }
-    }
-
     private fun dispatchEvent(event: String, args: Array<Any>) {
         eventHandlers[event]?.forEach { handler ->
             if (args.isNotEmpty()) {
@@ -243,6 +220,8 @@ object SocketEvents {
     
     // User presence events
     const val USER_TYPING = "user:typing"
+    const val REQUEST_TYPING = "request:typing"
+    const val ACTION_TYPING = "action:typing"
     const val REQUEST_HEARTBEAT = "request:heartbeat"
     const val PRESENCE_UPDATE = "action:presence:update"
     const val REQUEST_PRESENCE_SUBSCRIBE = "request:presence:subscribe"

@@ -49,25 +49,23 @@ import org.koin.androidx.compose.koinViewModel
 fun MainScaffold(
     navController: NavHostController,
     viewModel: ScaffoldViewModel = koinViewModel(),
+    route: String,
     content: @Composable () -> Unit
 ) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-    val currentScreen = Screen.items.find { it.route == currentRoute }
     val currentUser by viewModel.currentUser.collectAsState()
 
-    // Logic to determine if we should show the TopBar
-    val showTopBar = currentRoute != Screen.Login.route && currentRoute != Screen.ChatRoom.route
+    // showTopBar is implied true because we only wrap screens that need it now
+    val showTopBar = true
 
     Scaffold(
         topBar = {
             if (showTopBar) {
-                if (currentRoute == Screen.QuickAccess.route || currentRoute == Screen.Home.route) {
+                if (route == Screen.QuickAccess.route || route == Screen.Home.route) {
                     DashboardTopBar(
                         user = currentUser,
                         onProfileClick = { navController.navigate(Screen.Profile.route) }
                     )
-                } else if (currentRoute == Screen.Chat.route) {
+                } else if (route == Screen.Chat.route) {
                     // Messages screen TopBar
                     CenterAlignedTopAppBar(
                         title = {
@@ -85,8 +83,8 @@ fun MainScaffold(
                                 )
                             }
                         },
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = Color.White,
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = TestRaTheme.extendedColors.cardBackground,
                             titleContentColor = TestRaTheme.extendedColors.textPrimary,
                             navigationIconContentColor = TestRaTheme.extendedColors.textPrimary,
                             actionIconContentColor = TestRaTheme.extendedColors.textPrimary
@@ -109,16 +107,17 @@ fun MainScaffold(
                         }
                     )
                 } else {
+                    val currentScreen = Screen.items.find { it.route == route }
                     CenterAlignedTopAppBar(
                         title = {
                             Text(
-                                text = if (currentRoute == Screen.AccidentForm.route) "Report #2024-889" else (currentScreen?.title ?: "NewRa App"),
+                                text = if (route == Screen.AccidentForm.route) "Report #2024-889" else (currentScreen?.title ?: "NewRa App"),
                                 style = MaterialTheme.typography.titleLarge,
                                 color = TestRaTheme.extendedColors.textPrimary
                             )
                         },
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = Color.White,
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = TestRaTheme.extendedColors.cardBackground,
                             titleContentColor = TestRaTheme.extendedColors.textPrimary,
                             navigationIconContentColor = TestRaTheme.extendedColors.textPrimary,
                             actionIconContentColor = TestRaTheme.extendedColors.textPrimary
@@ -151,7 +150,7 @@ fun DashboardTopBar(
     onProfileClick: () -> Unit
 ) {
     Surface(
-        color = Color.White,
+        color = TestRaTheme.extendedColors.cardBackground,
         shadowElevation = 0.dp,
         modifier = Modifier.fillMaxWidth()
     ) {

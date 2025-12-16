@@ -16,6 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -143,7 +144,9 @@ class PresenceService(
             val response = apiExecutor.executeWithBearer { auth ->
                 chatApi.getPresenceStatus(auth, userIds.joinToString(","))
             }
-            _presenceState.value = _presenceState.value + response.statuses
+            _presenceState.update { current ->
+                current + response.statuses
+            }
             Log.d(TAG, "Fetched presence for ${userIds.size} users: ${response.statuses}")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch presence status", e)
@@ -220,9 +223,11 @@ class PresenceService(
         }
         
         // Remove unsubscribed users from local presence state
-        val updated = _presenceState.value.toMutableMap()
-        userIds.forEach { userId -> updated.remove(userId) }
-        _presenceState.value = updated
+        _presenceState.update { current ->
+            val updated = current.toMutableMap()
+            userIds.forEach { userId -> updated.remove(userId) }
+            updated
+        }
     }
 
     private fun handlePresenceUpdate(data: Any) {
@@ -233,12 +238,16 @@ class PresenceService(
             val timestamp = json.optLong("timestamp", System.currentTimeMillis())
             
             val isOnline = status == "online"
-            val updated = _presenceState.value.toMutableMap()
-            updated[userId] = UserPresenceStatus(
-                online = isOnline,
-                lastSeen = if (isOnline) null else timestamp
-            )
-            _presenceState.value = updated
+
+            
+            _presenceState.update { current ->
+                val updated = current.toMutableMap()
+                updated[userId] = UserPresenceStatus(
+                    online = isOnline,
+                    lastSeen = if (isOnline) null else timestamp
+                )
+                updated
+            }
             
             Log.d(TAG, "Presence update: $userId is ${if (isOnline) "online" else "offline"}")
         } catch (e: Exception) {

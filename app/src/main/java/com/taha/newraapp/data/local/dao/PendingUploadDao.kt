@@ -81,4 +81,11 @@ interface PendingUploadDao {
      */
     @Query("SELECT * FROM pending_uploads WHERE status = 'DONE'")
     suspend fun getCompletedUploads(): List<PendingUploadEntity>
+    
+    /**
+     * Clear all pending uploads.
+     * Call this on sign-out.
+     */
+    @Query("DELETE FROM pending_uploads")
+    suspend fun clearAll()
 }

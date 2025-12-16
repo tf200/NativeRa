@@ -54,7 +54,7 @@ class GetPrioritizedContactsUseCase(
                     id = user.id,
                     officerId = user.officerId,
                     name = "${user.firstName} ${user.lastName}",
-                    center = user.center ?: "",
+                    center = user.center,
                     lastMessage = conversation?.lastMessageContent,
                     lastMessageTime = conversation?.lastMessageTimestamp,
                     unreadCount = conversation?.unreadCount ?: 0

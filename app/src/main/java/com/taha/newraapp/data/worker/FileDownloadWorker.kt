@@ -3,6 +3,7 @@ package com.taha.newraapp.data.worker
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -63,6 +64,9 @@ class FileDownloadWorker(
         Log.d(TAG, "Starting download for attachment: $attachmentId, message: $messageId")
         
         try {
+            // Mark as DOWNLOADING
+            messageDao.updateDownloadStatus(messageId, com.taha.newraapp.domain.model.DownloadStatus.DOWNLOADING.name)
+            
             // Set foreground for long-running download
             setForeground(getForegroundInfo())
             
@@ -97,8 +101,7 @@ class FileDownloadWorker(
             downloadFile(
                 downloadUrl = downloadInfo.downloadUrl,
                 destFile = localFile,
-                fileSize = downloadInfo.size,
-                messageId = messageId
+                fileSize = downloadInfo.size
             )
             Log.d(TAG, "Download complete")
             
@@ -109,9 +112,11 @@ class FileDownloadWorker(
             
         } catch (e: IOException) {
             Log.e(TAG, "Network error during download: ${e.message}")
-            handleRetry(e.message ?: "Network error")
+            handleRetry(messageId, e.message ?: "Network error")
         } catch (e: Exception) {
             Log.e(TAG, "Error during download: ${e.message}")
+            // Mark as FAILED
+            messageDao.updateDownloadStatus(messageId, com.taha.newraapp.domain.model.DownloadStatus.FAILED.name)
             Result.failure()
         }
     }
@@ -119,11 +124,10 @@ class FileDownloadWorker(
     /**
      * Download file from presigned URL to local storage.
      */
-    private suspend fun downloadFile(
+    private fun downloadFile(
         downloadUrl: String,
         destFile: File,
-        fileSize: Long,
-        messageId: String
+        fileSize: Long
     ) {
         val request = Request.Builder()
             .url(downloadUrl)
@@ -135,18 +139,18 @@ class FileDownloadWorker(
         if (!response.isSuccessful) {
             throw IOException("Download failed: ${response.code} ${response.message}")
         }
-        
-        response.body?.let { body ->
+
+        response.body.let { body ->
             FileOutputStream(destFile).use { output ->
                 val buffer = ByteArray(8 * 1024)
                 var bytesRead: Int
                 var totalBytesRead = 0L
-                
+
                 body.byteStream().use { input ->
                     while (input.read(buffer).also { bytesRead = it } != -1) {
                         output.write(buffer, 0, bytesRead)
                         totalBytesRead += bytesRead
-                        
+
                         // Report progress
                         setProgressAsync(workDataOf(
                             KEY_PROGRESS to totalBytesRead,
@@ -155,7 +159,7 @@ class FileDownloadWorker(
                     }
                 }
             }
-        } ?: throw IOException("Response body is null")
+        }
     }
     
     /**
@@ -174,19 +178,22 @@ class FileDownloadWorker(
             attachmentMimeType = downloadInfo.mimeType,
             attachmentFileType = downloadInfo.fileType,
             attachmentFileName = downloadInfo.filename,
-            attachmentSize = downloadInfo.size
+            attachmentSize = downloadInfo.size,
+            downloadStatus = com.taha.newraapp.domain.model.DownloadStatus.COMPLETE.name
         )
         
-        messageDao.insertMessage(updatedMessage)
+        messageDao.updateMessage(updatedMessage)
         Log.d(TAG, "Updated message $messageId with local path: $localPath")
     }
     
-    private fun handleRetry(error: String): Result {
+    private suspend fun handleRetry(messageId: String, error: String): Result {
         return if (runAttemptCount < 5) {
             Log.d(TAG, "Retrying download, attempt ${runAttemptCount + 1}")
             Result.retry()
         } else {
             Log.e(TAG, "Max retries reached, failing download: $error")
+            // Mark as FAILED so user can manually retry
+            messageDao.updateDownloadStatus(messageId, com.taha.newraapp.domain.model.DownloadStatus.FAILED.name)
             Result.failure()
         }
     }
@@ -201,22 +208,29 @@ class FileDownloadWorker(
             .setProgress(100, 0, true)
             .build()
         
-        return ForegroundInfo(NOTIFICATION_ID, notification)
+        // Android 14+ requires foreground service type
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ForegroundInfo(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            ForegroundInfo(NOTIFICATION_ID, notification)
+        }
     }
     
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "File Downloads",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Shows file download progress"
-            }
-            
-            val notificationManager = applicationContext
-                .getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "File Downloads",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Shows file download progress"
         }
+        
+        val notificationManager = applicationContext
+            .getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 }

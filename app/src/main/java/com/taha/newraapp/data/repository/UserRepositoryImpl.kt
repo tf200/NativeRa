@@ -33,15 +33,13 @@ class UserRepositoryImpl(
     }
 
     /**
-     * Get user by officer ID using PowerSync getOptional
+     * Get user by ID using PowerSync getOptional.
+     * Used for fetching sender info for notifications.
      */
-    private suspend fun getUserById(id: String): User? {
-        
-        val database = powerSyncManager.database
-        if (database == null) {
-            return null
-        }
-        
+    override suspend fun getUserById(id: String): User? {
+
+        val database = powerSyncManager.database ?: return null
+
         val query = "SELECT id, officerId, firstName, lastName, center, role, phoneNumber, isValid, isFrozen, contacts FROM User WHERE id = ? LIMIT 1"
         
         val result = database.getOptional(
@@ -60,10 +58,6 @@ class UserRepositoryImpl(
                 isFrozen = (cursor.getLong(8) ?: 0L) == 1L,
                 contacts = cursor.getString(9) ?: "[]"
             )
-        }
-        
-        if (result == null) {
-        } else {
         }
         
         return result

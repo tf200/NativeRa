@@ -9,16 +9,22 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.taha.newraapp.R
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,20 +56,109 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = koinViewModel()
 ) {
     val user by viewModel.user.collectAsState()
+    val isSigningOut by viewModel.isSigningOut.collectAsState()
+    var showSignOutDialog by remember { mutableStateOf(false) }
+
+    // Sign-Out Confirmation Dialog
+    // Bright red color for critical action (consistent across light/dark themes)
+    val dangerRed = Color(0xFFDC2626)
+    var confirmCheckboxChecked by remember { mutableStateOf(false) }
+    
+    if (showSignOutDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showSignOutDialog = false
+                confirmCheckboxChecked = false
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = dangerRed,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.signout_title),
+                    fontWeight = FontWeight.Bold,
+                    color = dangerRed
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.signout_warning),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Confirmation checkbox
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = confirmCheckboxChecked,
+                            onCheckedChange = { confirmCheckboxChecked = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = dangerRed,
+                                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.signout_confirm_checkbox),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showSignOutDialog = false
+                        confirmCheckboxChecked = false
+                        viewModel.signOut()
+                        onLogout()
+                    },
+                    enabled = confirmCheckboxChecked,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = dangerRed,
+                        disabledContainerColor = dangerRed.copy(alpha = 0.4f)
+                    )
+                ) {
+                    Text(stringResource(R.string.signout_button))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showSignOutDialog = false
+                    confirmCheckboxChecked = false
+                }) {
+                    Text(stringResource(R.string.signout_cancel))
+                }
+            }
+        )
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFEFBFF))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         if (user != null) {
             ProfileContent(
                 user = user!!,
                 onBack = onBack,
-                onLogout = {
-                    viewModel.logout()
-                    onLogout()
-                }
+                onLogout = { showSignOutDialog = true },
+                isSigningOut = isSigningOut
             )
         } else {
             // Loading State
@@ -84,7 +179,8 @@ fun ProfileScreen(
 fun ProfileContent(
     user: User,
     onBack: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    isSigningOut: Boolean = false
 ) {
     Column(
         modifier = Modifier
@@ -114,7 +210,7 @@ fun ProfileContent(
                     .size(110.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary)
-                    .border(4.dp, Color.White, CircleShape),
+                    .border(4.dp, TestRaTheme.extendedColors.cardBackground, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -211,7 +307,7 @@ fun ProfileContent(
                 .padding(horizontal = 16.dp)
                 .height(50.dp)
         ) {
-            Icon(Icons.Default.Logout, contentDescription = null)
+            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
             Text("Logout", fontWeight = FontWeight.SemiBold)
         }
@@ -233,8 +329,8 @@ fun ProfileInfoItem(
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Slate100),
+        colors = CardDefaults.cardColors(containerColor = TestRaTheme.extendedColors.cardBackground),
+        border = BorderStroke(1.dp, TestRaTheme.extendedColors.border),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier.fillMaxWidth()
     ) {

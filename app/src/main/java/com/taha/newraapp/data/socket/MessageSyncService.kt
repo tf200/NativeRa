@@ -32,11 +32,14 @@ import kotlin.math.pow
  * - Max retry limit (fails after N attempts, user can manually retry)
  * - Observes Room DB for pending messages (instant when foreground)
  * - Socket connection status aware
+ * - Automatic attachment download for incoming messages
  */
 class MessageSyncService(
     private val messageDao: MessageDao,
     private val chatSocketService: ChatSocketService,
-    private val socketManager: SocketManager
+    private val socketManager: SocketManager,
+    private val attachmentRepository: com.taha.newraapp.data.repository.AttachmentRepository? = null,
+    private val typingService: TypingService? = null
 ) {
     companion object {
         private const val TAG = "MessageSyncService"
@@ -140,6 +143,17 @@ class MessageSyncService(
         Log.d(TAG, "Sending message via socket: ${message.id}, content='${message.content}'")
 
         try {
+            // Build attachment object if present
+            val attachment = if (!message.attachmentId.isNullOrBlank()) {
+                com.taha.newraapp.data.socket.model.MessageAttachment(
+                    id = message.attachmentId,
+                    type = message.attachmentFileType ?: "FILE",
+                    filename = message.attachmentFileName ?: "attachment",
+                    mimeType = message.attachmentMimeType ?: "application/octet-stream",
+                    size = message.attachmentSize ?: 0L
+                )
+            } else null
+            
             // Send via ChatSocketService
             chatSocketService.sendMessage(
                 messageId = message.id,
@@ -147,7 +161,7 @@ class MessageSyncService(
                 messageType = message.type,
                 senderId = message.senderId,
                 receiverIds = listOf(message.recipientId),
-                attachmentId = message.attachmentId,
+                attachment = attachment,
                 onAck = { success, error ->
                     scope.launch {
                         handleSendResult(message, success, error)
@@ -269,13 +283,16 @@ class MessageSyncService(
     }
 
     /**
-     * Handle an incoming message from the socket.
+     * Handle an incoming message from the socket OR from FCM.
      * 1. Save to local Room DB
      * 2. Update conversation with unread count
+     * 3. Queue attachment download if present
+     * 4. Send delivery confirmation
      * 
      * Note: Duplicate messages are handled by Room's REPLACE strategy.
+     * Can be called from socket listener OR FCM handler when socket is connected.
      */
-    private suspend fun handleIncomingMessage(message: ReceivedMessage) {
+    suspend fun handleIncomingMessage(message: ReceivedMessage) {
         try {
             // Skip messages we sent ourselves (echoed back from server)
             if (message.senderId == currentUserId) {
@@ -283,12 +300,36 @@ class MessageSyncService(
                 return
             }
 
+            // Clear typing indicator for this sender since they sent a message
+            typingService?.clearTypingFor(message.senderId)
+
             Log.i(TAG, ">>> Processing incoming message: id=${message.id}, sender=${message.senderId}, content=${message.content}")
 
             // Parse ISO timestamp to millis
             val timestampMillis = parseIsoTimestamp(message.timestamp)
 
-            // Create message entity
+            // Extract attachment metadata if present
+            val attachment = message.attachment
+            
+            // LOGGING FOR DEBUGGING
+            if (attachment != null) {
+                Log.d(TAG, ">>> Attachment Received: id=${attachment.id}, type=${attachment.type}, filename=${attachment.filename}, size=${attachment.size}, mime=${attachment.mimeType}")
+            } else {
+                Log.d(TAG, ">>> No attachment in this message (type=${message.messageType})")
+            }
+
+            // Determine download status based on file size
+            // Auto-download for files ≤ 5MB, manual for larger
+            val autoDownloadThreshold = 5 * 1024 * 1024L // 5MB
+            val downloadStatus = when {
+                attachment == null -> null
+                attachment.size <= autoDownloadThreshold -> 
+                    com.taha.newraapp.domain.model.DownloadStatus.PENDING.name
+                else -> 
+                    com.taha.newraapp.domain.model.DownloadStatus.NOT_STARTED.name
+            }
+
+            // Create message entity with attachment metadata
             val messageEntity = MessageEntity(
                 id = message.id,
                 conversationId = message.senderId,  // Group by sender for conversation view
@@ -298,12 +339,29 @@ class MessageSyncService(
                 type = message.messageType,
                 status = MessageStatus.DELIVERED.name,
                 timestamp = timestampMillis,
-                attachmentId = message.attachmentId
+                attachmentId = attachment?.id,
+                attachmentFileType = attachment?.type,
+                attachmentMimeType = attachment?.mimeType,
+                attachmentFileName = attachment?.filename,
+                attachmentSize = attachment?.size,
+                downloadStatus = downloadStatus
             )
 
             // Save message to DB (REPLACE handles duplicates)
             messageDao.insertMessage(messageEntity)
             Log.i(TAG, ">>> Successfully saved incoming message to DB: ${message.id}")
+
+            // Queue attachment download only for small files (auto-download)
+            if (attachment != null && attachment.size <= autoDownloadThreshold) {
+                Log.i(TAG, ">>> Auto-downloading attachment (${attachment.size} bytes): ${attachment.id}")
+                attachmentRepository?.downloadAttachment(
+                    messageId = message.id,
+                    attachmentId = attachment.id,
+                    conversationId = message.senderId
+                )
+            } else if (attachment != null) {
+                Log.i(TAG, ">>> Large attachment (${attachment.size} bytes), waiting for manual download: ${attachment.id}")
+            }
 
             // Send delivery confirmation to server
             chatSocketService.sendDeliveryConfirmation(
@@ -324,19 +382,16 @@ class MessageSyncService(
      * Update or create conversation entry for incoming message.
      */
     private suspend fun updateConversationForIncoming(message: ReceivedMessage, timestampMillis: Long) {
-        val existingConvo = messageDao.getConversation(message.senderId)
-        val newUnreadCount = (existingConvo?.unreadCount ?: 0) + 1
-
         val conversation = ConversationEntity(
             peerId = message.senderId,
             lastMessageContent = message.content ?: "[Media]",
             lastMessageTimestamp = timestampMillis,
-            unreadCount = newUnreadCount,
+            unreadCount = 0, // Dynamic counting now used
             lastMessageSenderId = message.senderId,
             lastMessageStatus = MessageStatus.DELIVERED.name
         )
         messageDao.insertConversation(conversation)
-        Log.d(TAG, "Updated conversation: ${message.senderId}, unread=$newUnreadCount")
+        Log.d(TAG, "Updated conversation: ${message.senderId}")
     }
 
     /**
@@ -435,8 +490,8 @@ class MessageSyncService(
             // Update local DB first (batch update for efficiency)
             messageDao.markMessagesAsRead(unseenMessageIds)
             
-            // Reset unread count for this conversation
-            messageDao.updateUnreadCount(peerId, 0)
+            // Unread count is automatically updated via dynamic query in Repository
+
 
             // Send seen confirmation to server for each message
             // This runs asynchronously - we don't need to wait for ack

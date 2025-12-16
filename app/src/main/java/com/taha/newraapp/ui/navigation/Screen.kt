@@ -44,6 +44,15 @@ sealed class Screen(val route: String, val title: String) {
     // ===========================================
     data object Profile : Screen("profile", "Profile")
     data object Settings : Screen("settings", "Settings")
+    
+    // ===========================================
+    // Media Viewer
+    // ===========================================
+    data object MediaViewer : Screen("media_viewer/{filePath}/{senderName}/{timestamp}", "Media Viewer") {
+        fun createRoute(filePath: String, senderName: String, timestamp: Long): String {
+            return "media_viewer/${android.net.Uri.encode(filePath)}/${android.net.Uri.encode(senderName)}/$timestamp"
+        }
+    }
 
     companion object {
         val items by lazy {
@@ -60,7 +69,8 @@ sealed class Screen(val route: String, val title: String) {
                 Alerts,
                 GeoPosition,
                 Profile,
-                Settings
+                Settings,
+                MediaViewer
             )
         }
     }

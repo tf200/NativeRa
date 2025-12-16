@@ -31,7 +31,7 @@
     <string name="quick_access_recent_reports">Recent Reports</string>
     
     <!-- Contacts Screen -->
-    <string name="contacts_search_placeholder">Search contacts or messages...</string>
+    <string name="contacts_search_placeholder">Search contacts or messages…</string>
     <string name="contacts_search_clear">Clear search</string>
     <string name="contacts_search_icon_description">Search</string>
     <string name="contacts_error_prefix">Error: %s</string>
@@ -47,14 +47,14 @@
     <string name="chat_last_seen_minutes_ago">Last seen %dm ago</string>
     <string name="chat_last_seen_hours_ago">Last seen %dh ago</string>
     <string name="chat_last_seen_date">Last seen %s</string>
-    <string name="chat_loading">Loading...</string>
-    <string name="chat_user_initials_fallback">?</string>
+    <string name="chat_loading">Loading…</string>
+    <string name="chat_user_initials_fallback">"?"</string>
     <string name="chat_message_sending">Sending</string>
     <string name="chat_message_sent">Sent</string>
     <string name="chat_message_delivered">Delivered</string>
     <string name="chat_message_read">Read</string>
     <string name="chat_message_failed">Failed</string>
-    <string name="chat_input_placeholder">Type a message...</string>
+    <string name="chat_input_placeholder">Type a message…</string>
     <string name="chat_send_description">Send message</string>
     <string name="chat_back_description">Back</string>
     <string name="chat_voice_call_description">Voice call</string>
@@ -64,6 +64,7 @@
     <string name="chat_dismiss">Dismiss</string>
     <string name="chat_date_today">Today</string>
     <string name="chat_date_yesterday">Yesterday</string>
+    <string name="chat_typing">typing…</string>
     
     <!-- Chat Attachments -->
     <string name="chat_attach_camera">Camera</string>
@@ -75,6 +76,24 @@
     <string name="chat_camera_dialog_message">What would you like to capture?</string>
     <string name="chat_camera_photo">Photo</string>
     <string name="chat_camera_video">Video</string>
+    <string name="chat_image_attachment">Image attachment</string>
+    <string name="chat_upload_failed">Upload failed</string>
+    <string name="chat_video_attachment">Video attachment</string>
+    <string name="chat_play_video">Play video</string>
+    
+    <!-- Audio Recording -->
+    <string name="audio_cancel">Cancel recording</string>
+    <string name="audio_stop">Stop recording</string>
+    <string name="audio_play">Play audio</string>
+    <string name="audio_pause">Pause audio</string>
+    <string name="audio_recording">Recording…</string>
+    <string name="audio_download">Download audio</string>
+    <string name="chat_audio_message">Audio Message</string>
+
+    <!-- Attachment Downloads -->
+    <string name="chat_download">Download</string>
+    <string name="chat_retry">Retry</string>
+    <string name="chat_downloading">Downloading…</string>
 
     <!-- Language -->
     <string name="language_english">English</string>
@@ -88,4 +107,11 @@
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="retry">Retry</string>
+    
+    <!-- Sign Out Dialog -->
+    <string name="signout_title">Sign Out</string>
+    <string name="signout_warning">Signing out will permanently delete all your chat history and files stored on this device. This action cannot be undone.</string>
+    <string name="signout_confirm_checkbox">I understand that all my data will be deleted</string>
+    <string name="signout_button">Sign Out</string>
+    <string name="signout_cancel">Cancel</string>
 </resources>

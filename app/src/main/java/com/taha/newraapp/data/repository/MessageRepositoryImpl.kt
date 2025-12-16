@@ -1,6 +1,7 @@
 package com.taha.newraapp.data.repository
 
 import com.taha.newraapp.data.local.dao.MessageDao
+import com.taha.newraapp.data.local.dao.UnreadCountTuple
 import com.taha.newraapp.data.local.entities.ConversationEntity
 import com.taha.newraapp.data.local.entities.MessageEntity
 import com.taha.newraapp.domain.model.Conversation
@@ -10,6 +11,7 @@ import com.taha.newraapp.domain.model.MessageType
 import com.taha.newraapp.domain.repository.MessageRepository
 import com.taha.newraapp.domain.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 
@@ -34,8 +36,17 @@ class MessageRepositoryImpl(
     }
 
     override fun getConversations(): Flow<List<Conversation>> {
-        return messageDao.getConversations().map { entities ->
-            entities.map { it.toDomain() }
+        return combine(
+            messageDao.getConversations(),
+            messageDao.getAllUnreadCounts()
+        ) { conversations, unreadCounts ->
+            val unreadMap = unreadCounts.associate { it.conversationId to it.count }
+            
+            conversations.map { entity ->
+                entity.toDomain().copy(
+                    unreadCount = unreadMap[entity.peerId] ?: 0
+                )
+            }
         }
     }
 
@@ -60,7 +71,7 @@ class MessageRepositoryImpl(
             peerId = peerId,
             lastMessageContent = content,
             lastMessageTimestamp = timestamp,
-            unreadCount = 0, // Sent by us, so 0 unread
+            unreadCount = 0, // Ignored, using dynamic count
             lastMessageSenderId = currentUserId,
             lastMessageStatus = MessageStatus.PENDING.name
         )
@@ -71,11 +82,21 @@ class MessageRepositoryImpl(
      * Handle incoming message from socket and save to local DB.
      * This will be connected to ChatSocketService later.
      */
+    /**
+     * Handle incoming message from socket and save to local DB.
+     * This will be connected to ChatSocketService later.
+     */
     suspend fun receiveMessage(
         senderId: String,
         content: String,
         timestamp: Long,
-        messageId: String
+        messageId: String,
+        type: String = MessageType.text.name,
+        attachmentId: String? = null,
+        attachmentFileType: String? = null,
+        attachmentMimeType: String? = null,
+        attachmentFileName: String? = null,
+        attachmentSize: Long? = null
     ) {
         val currentUserId = getCurrentUserId()
         
@@ -85,21 +106,22 @@ class MessageRepositoryImpl(
             senderId = senderId,
             recipientId = currentUserId,
             content = content,
-            type = MessageType.text.name,
+            type = type, // Use provided type
             status = MessageStatus.DELIVERED.name,
-            timestamp = timestamp
+            timestamp = timestamp,
+            attachmentId = attachmentId,
+            attachmentFileType = attachmentFileType,
+            attachmentMimeType = attachmentMimeType,
+            attachmentFileName = attachmentFileName,
+            attachmentSize = attachmentSize
         )
         messageDao.insertMessage(message)
         
-        // Update conversation with unread count increment
-        val existingConvo = messageDao.getConversation(senderId)
-        val newUnreadCount = (existingConvo?.unreadCount ?: 0) + 1
-        
         val conversation = ConversationEntity(
             peerId = senderId,
-            lastMessageContent = content,
+            lastMessageContent = if (type == "media") "[Attachment]" else content,
             lastMessageTimestamp = timestamp,
-            unreadCount = newUnreadCount,
+            unreadCount = 0, // Ignored, using dynamic count
             lastMessageSenderId = senderId,
             lastMessageStatus = MessageStatus.DELIVERED.name
         )
@@ -114,7 +136,8 @@ class MessageRepositoryImpl(
     }
 
     override suspend fun markAsRead(peerId: String) {
-        messageDao.updateUnreadCount(peerId, 0)
+        // No-op in repository, now handled by marking messages as READ in DAO
+        // messageDao.updateUnreadCount(peerId, 0)
     }
 
     private fun MessageEntity.toDomain(): Message {
@@ -126,7 +149,20 @@ class MessageRepositoryImpl(
             content = content,
             type = MessageType.valueOf(type),
             status = MessageStatus.valueOf(status),
-            timestamp = timestamp
+            timestamp = timestamp,
+            attachmentId = attachmentId,
+            attachmentLocalPath = attachmentLocalPath,
+            attachmentFileType = attachmentFileType,
+            attachmentMimeType = attachmentMimeType,
+            attachmentFileName = attachmentFileName,
+            attachmentSize = attachmentSize,
+            downloadStatus = downloadStatus?.let { 
+                try { 
+                    com.taha.newraapp.domain.model.DownloadStatus.valueOf(it) 
+                } catch (e: Exception) { 
+                    null 
+                } 
+            }
         )
     }
 

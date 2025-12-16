@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import androidx.core.content.FileProvider
+import androidx.core.graphics.scale
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -88,7 +89,7 @@ object CameraUtils {
             }
             
             val originalWidth = options.outWidth
-            val originalHeight = options.outHeight
+            options.outHeight
             
             // Calculate sample size for memory-efficient loading
             var sampleSize = 1
@@ -110,7 +111,7 @@ object CameraUtils {
             val scaledBitmap = if (bitmap.width > maxWidth) {
                 val ratio = maxWidth.toFloat() / bitmap.width
                 val newHeight = (bitmap.height * ratio).toInt()
-                Bitmap.createScaledBitmap(bitmap, maxWidth, newHeight, true).also {
+                bitmap.scale(maxWidth, newHeight).also {
                     if (it != bitmap) bitmap.recycle()
                 }
             } else {

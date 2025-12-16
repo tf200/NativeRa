@@ -19,15 +19,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CarCrash
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.DirectionsWalk
-import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -40,6 +41,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,17 +51,90 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.taha.newraapp.R
 import com.taha.newraapp.ui.navigation.Screen
 import com.taha.newraapp.ui.theme.Amber500
 import com.taha.newraapp.ui.theme.Slate100
 import com.taha.newraapp.ui.theme.TestRaTheme
+import org.koin.androidx.compose.koinViewModel
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+
+/**
+ * QuickAccessScreen with optimized Compose recomposition:
+ * - Uses collectAsStateWithLifecycle() for lifecycle-aware state collection
+ * - ViewModel's StateFlow with WhileSubscribed prevents unnecessary resubscription
+ * - Only the badge count value triggers recomposition when it changes
+ */
 @Composable
 fun QuickAccessScreen(
     onNavigateTo: (String) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    viewModel: QuickAccessViewModel = koinViewModel()
 ) {
+    val context = LocalContext.current
+    
+    // Collect unread count with lifecycle awareness
+    // This only recomposes when the value actually changes
+    val unreadCount by viewModel.unreadMessageCount.collectAsStateWithLifecycle()
+    
+    // Track if notification permission was already granted before requesting
+    // This prevents calling refreshFcmToken on every app open
+    var hadNotificationPermission by remember { mutableStateOf(false) }
+    
+    // Permission Handling
+    // We prompt for Notifications (Android 13+) and Location when user lands here.
+    // This ensures these prompts happen AFTER login navigation, not blocking it.
+    
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { resultMap ->
+        // Only refresh FCM token if notification permission CHANGED from denied to granted
+        // This prevents unnecessary API calls on every app open
+        val isNotificationGranted = resultMap["android.permission.POST_NOTIFICATIONS"] ?: false
+        if (isNotificationGranted && !hadNotificationPermission) {
+            viewModel.refreshFcmToken()
+        }
+    }
+    
+    LaunchedEffect(Unit) {
+        // Check current notification permission state BEFORE requesting
+        hadNotificationPermission = if (Build.VERSION.SDK_INT >= 33) {
+            ContextCompat.checkSelfPermission(
+                context,
+                "android.permission.POST_NOTIFICATIONS"
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true // Pre-Android 13 doesn't require notification permission
+        }
+        
+        val permissionsToRequest = mutableListOf<String>()
+        
+        // Location Permissions
+        permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        
+        // Notification Permission (Android 13+)
+        if (Build.VERSION.SDK_INT >= 33) {
+            permissionsToRequest.add("android.permission.POST_NOTIFICATIONS")
+        }
+        
+        if (permissionsToRequest.isNotEmpty()) {
+            permissionLauncher.launch(permissionsToRequest.toTypedArray())
+        }
+    }
+    
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -104,16 +179,16 @@ fun QuickAccessScreen(
             ) {
                 QuickActionItem(
                     title = stringResource(R.string.quick_access_map),
-                    icon = Icons.Default.Map,
+                    icon = Icons.Outlined.LocationOn,
                     iconColor = MaterialTheme.colorScheme.primary, // Purple
                     modifier = Modifier.weight(1f),
                     onClick = { onNavigateTo(Screen.GeoPosition.route) }
                 )
                 QuickActionItem(
                     title = stringResource(R.string.quick_access_messages),
-                    icon = Icons.Default.Chat,
+                    icon = Icons.Outlined.ChatBubbleOutline,
                     iconColor = MaterialTheme.colorScheme.primary, // Purple
-                    badgeCount = 3,
+                    badgeCount = unreadCount,
                     modifier = Modifier.weight(1f),
                     onClick = { onNavigateTo(Screen.Chat.route) }
                 )
@@ -127,14 +202,14 @@ fun QuickAccessScreen(
             ) {
                 QuickActionItem(
                     title = stringResource(R.string.quick_access_alerts),
-                    icon = Icons.Default.Notifications,
-                    iconColor = Amber500, // Amber/Yellow
+                    icon = Icons.Outlined.Notifications,
+                    iconColor = MaterialTheme.colorScheme.error, // Red
                     modifier = Modifier.weight(1f),
                     onClick = { onNavigateTo(Screen.Alerts.route) }
                 )
                 QuickActionItem(
                     title = stringResource(R.string.quick_access_settings),
-                    icon = Icons.Default.Settings,
+                    icon = Icons.Outlined.Settings,
                     iconColor = Color.Gray, // Gray
                     modifier = Modifier.weight(1f),
                     onClick = { onNavigateTo(Screen.Settings.route) }
@@ -154,7 +229,7 @@ fun QuickAccessScreen(
             RecentReportItem(title = "Collision", location = "Ave Habib Bourguiba • 2v", time = "2h", status = "Draft", statusColor = Amber500, icon = Icons.Default.CarCrash)
         }
         item {
-            RecentReportItem(title = "Pedestrian", location = "La Marsa • 1v", time = "5h", status = "Submitted", statusColor = Color(0xFF4CAF50), icon = Icons.Default.DirectionsWalk) // Green
+            RecentReportItem(title = "Pedestrian", location = "La Marsa • 1v", time = "5h", status = "Submitted", statusColor = Color(0xFF4CAF50), icon = Icons.AutoMirrored.Filled.DirectionsWalk) // Green
         }
         item {
             RecentReportItem(title = "Hit & Run", location = "Ariana • 1v", time = "1d", status = "In Review", statusColor = TestRaTheme.extendedColors.textPrimary, icon = Icons.Default.Warning) // Purple
@@ -193,8 +268,8 @@ fun SectionHeader(title: String, action: String, onActionClick: () -> Unit = {})
 fun AlertCard(severity: String, severityColor: Color, title: String, time: String) {
     Card(
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Slate100),
+        colors = CardDefaults.cardColors(containerColor = TestRaTheme.extendedColors.cardBackground),
+        border = BorderStroke(1.dp, TestRaTheme.extendedColors.border),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -344,16 +419,16 @@ fun NewReportCard(onClick: () -> Unit) {
 fun QuickActionItem(
     title: String,
     icon: ImageVector,
-    iconColor: Color = MaterialTheme.colorScheme.primary,
     modifier: Modifier = Modifier,
+    iconColor: Color = MaterialTheme.colorScheme.primary,
     badgeCount: Int = 0,
     onClick: () -> Unit
 ) {
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Slate100),
+        colors = CardDefaults.cardColors(containerColor = TestRaTheme.extendedColors.cardBackground),
+        border = BorderStroke(1.dp, TestRaTheme.extendedColors.border),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = modifier.aspectRatio(1.3f)
     ) {
@@ -365,7 +440,7 @@ fun QuickActionItem(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(60.dp)
                         .background(iconColor.copy(alpha = 0.1f), RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -373,7 +448,7 @@ fun QuickActionItem(
                         imageVector = icon,
                         contentDescription = null,
                         tint = iconColor,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(30.dp)
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -417,8 +492,8 @@ fun RecentReportItem(
 ) {
     Card(
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Slate100),
+        colors = CardDefaults.cardColors(containerColor = TestRaTheme.extendedColors.cardBackground),
+        border = BorderStroke(1.dp, TestRaTheme.extendedColors.border),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier.fillMaxWidth()
     ) {

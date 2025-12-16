@@ -8,6 +8,12 @@ import com.taha.newraapp.data.local.entities.ConversationEntity
 import com.taha.newraapp.data.local.entities.MessageEntity
 import kotlinx.coroutines.flow.Flow
 
+data class UnreadCountTuple(
+    val conversationId: String,
+    val count: Int
+)
+
+
 @Dao
 interface MessageDao {
     @Query("SELECT * FROM messages WHERE conversationId = :peerId ORDER BY timestamp ASC")
@@ -16,8 +22,15 @@ interface MessageDao {
     @Query("SELECT * FROM conversations ORDER BY lastMessageTimestamp DESC")
     fun getConversations(): Flow<List<ConversationEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Query("SELECT conversationId, COUNT(*) as count FROM messages WHERE status != 'READ' AND senderId = conversationId GROUP BY conversationId")
+    fun getAllUnreadCounts(): Flow<List<UnreadCountTuple>>
+
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertMessage(message: MessageEntity)
+
+    @androidx.room.Update
+    suspend fun updateMessage(message: MessageEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertConversation(conversation: ConversationEntity)
@@ -31,11 +44,8 @@ interface MessageDao {
     @Query("DELETE FROM conversations")
     suspend fun clearAllConversations()
 
-    @Query("UPDATE conversations SET unreadCount = :count WHERE peerId = :peerId")
-    suspend fun updateUnreadCount(peerId: String, count: Int)
 
-    @Query("UPDATE conversations SET unreadCount = unreadCount + 1 WHERE peerId = :peerId")
-    suspend fun incrementUnreadCount(peerId: String)
+
 
     @Query("SELECT * FROM conversations WHERE peerId = :peerId LIMIT 1")
     suspend fun getConversation(peerId: String): ConversationEntity?
@@ -115,9 +125,30 @@ interface MessageDao {
     suspend fun markMessagesAsRead(messageIds: List<String>)
 
     /**
-     * Update the attachment ID for a message after upload is confirmed.
+     * Update the attachment ID and status for a message after upload is confirmed.
+     * Use this to transition from UPLOADING to PENDING.
      */
-    @Query("UPDATE messages SET attachmentId = :attachmentId WHERE id = :messageId")
-    suspend fun updateAttachmentId(messageId: String, attachmentId: String)
+    @Query("UPDATE messages SET attachmentId = :attachmentId, status = :status, retryCount = 0, nextRetryAt = 0 WHERE id = :messageId")
+    suspend fun updateAttachmentAndStatus(messageId: String, attachmentId: String, status: String)
+
+    /**
+     * Update the download status for an attachment.
+     */
+    @Query("UPDATE messages SET downloadStatus = :status WHERE id = :messageId")
+    suspend fun updateDownloadStatus(messageId: String, status: String)
+
+    /**
+     * Update download status and local path when download completes.
+     */
+    @Query("UPDATE messages SET downloadStatus = :status, attachmentLocalPath = :localPath WHERE id = :messageId")
+    suspend fun updateDownloadComplete(messageId: String, status: String, localPath: String)
+    
+    /**
+     * Observe total unread message count across all conversations.
+     * Counts messages where senderId = conversationId (incoming messages only, not sent by user)
+     * and status != READ. This is optimized for the QuickAccess screen badge.
+     */
+    @Query("SELECT COUNT(*) FROM messages WHERE status != 'READ' AND senderId = conversationId")
+    fun getTotalUnreadCount(): Flow<Int>
 }
 

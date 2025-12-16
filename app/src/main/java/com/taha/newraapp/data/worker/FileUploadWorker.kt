@@ -3,6 +3,7 @@ package com.taha.newraapp.data.worker
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -118,8 +119,12 @@ class FileUploadWorker(
             }
             Log.d(TAG, "Upload confirmed, attachment ID: ${confirmResponse.id}")
             
-            // Step 4: Update message with attachment ID
-            messageDao.updateAttachmentId(messageId, confirmResponse.id)
+            // Step 4: Update message with attachment ID and transition to PENDING
+            messageDao.updateAttachmentAndStatus(
+                messageId = messageId, 
+                attachmentId = confirmResponse.id,
+                status = "PENDING"
+            )
             pendingUploadDao.markComplete(messageId, confirmResponse.id)
             
             // Message is now ready to be sent by MessageSyncService
@@ -142,7 +147,7 @@ class FileUploadWorker(
      * Upload file to S3 using presigned URL.
      * Reports progress via WorkManager's setProgress.
      */
-    private suspend fun uploadToS3(
+    private fun uploadToS3(
         filePath: String,
         uploadUrl: String,
         mimeType: String,
@@ -205,23 +210,30 @@ class FileUploadWorker(
             .setProgress(100, 0, true)
             .build()
         
-        return ForegroundInfo(NOTIFICATION_ID, notification)
+        // Android 14+ requires foreground service type
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ForegroundInfo(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            ForegroundInfo(NOTIFICATION_ID, notification)
+        }
     }
     
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "File Uploads",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Shows file upload progress"
-            }
-            
-            val notificationManager = applicationContext
-                .getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "File Uploads",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Shows file upload progress"
         }
+        
+        val notificationManager = applicationContext
+            .getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 }
 

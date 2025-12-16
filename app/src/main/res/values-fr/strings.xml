@@ -31,7 +31,7 @@
     <string name="quick_access_recent_reports">Rapports récents</string>
     
     <!-- Contacts Screen -->
-    <string name="contacts_search_placeholder">Rechercher des contacts ou messages...</string>
+    <string name="contacts_search_placeholder">Rechercher des contacts ou messages…</string>
     <string name="contacts_search_clear">Effacer la recherche</string>
     <string name="contacts_search_icon_description">Rechercher</string>
     <string name="contacts_error_prefix">Erreur : %s</string>
@@ -47,14 +47,14 @@
     <string name="chat_last_seen_minutes_ago">Vu il y a %dm</string>
     <string name="chat_last_seen_hours_ago">Vu il y a %dh</string>
     <string name="chat_last_seen_date">Vu le %s</string>
-    <string name="chat_loading">Chargement...</string>
-    <string name="chat_user_initials_fallback">?</string>
+    <string name="chat_loading">Chargement…</string>
+    <string name="chat_user_initials_fallback">"?"</string>
     <string name="chat_message_sending">Envoi</string>
     <string name="chat_message_sent">Envoyé</string>
     <string name="chat_message_delivered">Distribué</string>
     <string name="chat_message_read">Lu</string>
     <string name="chat_message_failed">Échec</string>
-    <string name="chat_input_placeholder">Écrire un message...</string>
+    <string name="chat_input_placeholder">Écrire un message…</string>
     <string name="chat_send_description">Envoyer message</string>
     <string name="chat_back_description">Retour</string>
     <string name="chat_voice_call_description">Appel vocal</string>
@@ -64,6 +64,7 @@
     <string name="chat_dismiss">Ignorer</string>
     <string name="chat_date_today">Aujourd\'hui</string>
     <string name="chat_date_yesterday">Hier</string>
+    <string name="chat_typing">en train d\'écrire…</string>
     
     <!-- Chat Attachments -->
     <string name="chat_attach_camera">Caméra</string>
@@ -75,6 +76,24 @@
     <string name="chat_camera_dialog_message">Que souhaitez-vous capturer ?</string>
     <string name="chat_camera_photo">Photo</string>
     <string name="chat_camera_video">Vidéo</string>
+    <string name="chat_image_attachment">Pièce jointe image</string>
+    <string name="chat_upload_failed">Échec du téléchargement</string>
+    <string name="chat_video_attachment">Pièce jointe vidéo</string>
+    <string name="chat_play_video">Lire la vidéo</string>
+    
+    <!-- Audio Recording -->
+    <string name="audio_cancel">Annuler l\'enregistrement</string>
+    <string name="audio_stop">Arrêter l\'enregistrement</string>
+    <string name="audio_play">Lire l\'audio</string>
+    <string name="audio_pause">Mettre en pause l\'audio</string>
+    <string name="audio_recording">Enregistrement…</string>
+    <string name="audio_download">Télécharger l\'audio</string>
+    <string name="chat_audio_message">Message audio</string>
+
+    <!-- Attachment Downloads -->
+    <string name="chat_download">Télécharger</string>
+    <string name="chat_retry">Réessayer</string>
+    <string name="chat_downloading">Téléchargement…</string>
 
     <!-- Language -->
     <string name="language_english">English</string>
@@ -88,4 +107,11 @@
     <string name="ok">OK</string>
     <string name="cancel">Annuler</string>
     <string name="retry">Réessayer</string>
+    
+    <!-- Sign Out Dialog -->
+    <string name="signout_title">Déconnexion</string>
+    <string name="signout_warning">La déconnexion supprimera définitivement tout votre historique de conversation et les fichiers stockés sur cet appareil. Cette action est irréversible.</string>
+    <string name="signout_confirm_checkbox">Je comprends que toutes mes données seront supprimées</string>
+    <string name="signout_button">Se déconnecter</string>
+    <string name="signout_cancel">Annuler</string>
 </resources>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "600176004168",
+    "project_id": "newra-29959",
+    "storage_bucket": "newra-29959.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:600176004168:android:549c0d5f9d2d30d4049c7d",
+        "android_client_info": {
+          "package_name": "com.taha.newraapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZNefoc2fQdFCzro03WR3e0FfFU3kDiuI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

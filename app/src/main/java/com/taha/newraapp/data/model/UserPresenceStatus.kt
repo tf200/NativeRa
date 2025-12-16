@@ -1,5 +1,6 @@
 package com.taha.newraapp.data.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -8,7 +9,9 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class UserPresenceStatus(
+    @SerialName("online")
     val online: Boolean,
+    @SerialName("lastSeen")
     val lastSeen: Long? = null // null if currently online
 )
 
@@ -18,6 +21,7 @@ data class UserPresenceStatus(
  */
 @Serializable
 data class PresenceStatusResponse(
+    @SerialName("statuses")
     val statuses: Map<String, UserPresenceStatus>
 )
 
@@ -27,7 +31,10 @@ data class PresenceStatusResponse(
  */
 @Serializable
 data class PresenceUpdateEvent(
+    @SerialName("userId")
     val userId: String,
+    @SerialName("status")
     val status: String, // "online" or "offline"
+    @SerialName("timestamp")
     val timestamp: Long
 )

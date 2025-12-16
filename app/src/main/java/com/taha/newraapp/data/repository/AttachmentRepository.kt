@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
+import androidx.compose.runtime.Immutable
 import androidx.work.*
 import com.taha.newraapp.data.local.dao.MessageDao
 import com.taha.newraapp.data.local.dao.PendingUploadDao
@@ -96,10 +97,18 @@ class AttachmentRepository(
         // 1. Get file info
         val fileName = getFileName(uri) ?: "attachment_${System.currentTimeMillis()}"
         val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
-        val fileSize = getFileSize(uri)
         
         // 2. Copy file to internal storage
         val localPath = copyToInternalStorage(uri, fileName)
+        
+        // 3. Get actual file size from the local file (more reliable than ContentResolver)
+        val file = File(localPath)
+        val fileSize = file.length()
+        
+        if (fileSize <= 0) {
+            throw IllegalStateException("File size is 0 or invalid: $localPath")
+        }
+
         
         // 3. Generate thumbnail for images (TODO: implement BlurHash)
         val thumbnail: String? = null  // Will implement later with BlurHash library
@@ -115,7 +124,7 @@ class AttachmentRepository(
             recipientId = recipientId,
             content = "",  // Media messages have no text content
             type = "media",
-            status = "PENDING",
+            status = "UPLOADING",
             timestamp = System.currentTimeMillis(),
             attachmentLocalPath = localPath,
             attachmentMimeType = mimeType,
@@ -330,23 +339,46 @@ class AttachmentRepository(
     }
     
     /**
-     * Get file size from content URI.
+     * Clear all attachment files from internal storage.
+     * Call this on sign-out to remove all local files and free up space.
+     * 
+     * This method:
+     * 1. Cancels all pending upload/download WorkManager jobs
+     * 2. Deletes all files in the attachments directory
+     * 3. Deletes all files in the pending_uploads directory
+     * 4. Clears pending uploads from database
      */
-    private fun getFileSize(uri: Uri): Long {
-        var size = 0L
-        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-            if (cursor.moveToFirst() && sizeIndex >= 0) {
-                size = cursor.getLong(sizeIndex)
-            }
+    suspend fun clearAllAttachmentFiles() = withContext(Dispatchers.IO) {
+        Log.d(TAG, "Clearing all attachment files...")
+        
+        // 1. Cancel all pending work
+        workManager.cancelAllWork()
+        
+        // 2. Delete attachments directory
+        val attachmentsDir = File(context.filesDir, "attachments")
+        if (attachmentsDir.exists()) {
+            attachmentsDir.deleteRecursively()
+            Log.d(TAG, "Deleted attachments directory")
         }
-        return size
+        
+        // 3. Delete pending_uploads directory
+        val uploadsDir = File(context.filesDir, "pending_uploads")
+        if (uploadsDir.exists()) {
+            uploadsDir.deleteRecursively()
+            Log.d(TAG, "Deleted pending_uploads directory")
+        }
+        
+        // 4. Clear pending uploads from database
+        pendingUploadDao.clearAll()
+        Log.d(TAG, "Cleared pending uploads from database")
     }
+
 }
 
 /**
  * Upload progress data class for UI observation.
  */
+@Immutable
 data class UploadProgress(
     val progress: Float,        // 0.0 to 1.0
     val state: UploadState,

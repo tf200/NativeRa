@@ -2,20 +2,34 @@ package com.taha.newraapp.ui.screens.contacts
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.taha.newraapp.data.service.ChatPreloadService
+import com.taha.newraapp.data.socket.TypingService
 import com.taha.newraapp.domain.usecase.ContactUiModel
 import com.taha.newraapp.domain.usecase.GetPrioritizedContactsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class ContactsViewModel(
-    getPrioritizedContactsUseCase: GetPrioritizedContactsUseCase
+    getPrioritizedContactsUseCase: GetPrioritizedContactsUseCase,
+    private val chatPreloadService: ChatPreloadService,
+    typingService: TypingService
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
+    
+    // Set of user IDs who are currently typing
+    val typingUsers: StateFlow<Set<String>> = typingService.typingState
+        .map { it.keys }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptySet()
+        )
 
     private val _contactsResult = getPrioritizedContactsUseCase()
 
@@ -49,6 +63,14 @@ class ContactsViewModel(
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
+    }
+    
+    /**
+     * Preload chat data when user taps on a contact.
+     * Call this BEFORE navigating to ChatRoom for instant data display.
+     */
+    fun preloadChatData(peerId: String) {
+        chatPreloadService.preloadChatData(peerId)
     }
 }
 

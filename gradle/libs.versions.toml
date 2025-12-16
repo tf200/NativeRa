@@ -1,5 +1,5 @@
 [versions]
-agp = "8.9.1"
+agp = "8.13.2"
 kotlin = "2.2.0"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -10,16 +10,16 @@ material = "1.13.0"
 
 # Compose
 composeBom = "2025.12.00"
-activityCompose = "1.10.1"
-lifecycleRuntimeKtx = "2.9.0"
+activityCompose = "1.12.1"
+lifecycleRuntimeKtx = "2.10.0"
 
 # Networking
 retrofit = "2.11.0"
-okhttp = "4.12.0"
-kotlinxSerialization = "1.7.3"
+okhttp = "5.2.1"
+kotlinxSerialization = "1.9.0"
 
 # Storage
-datastore = "1.1.1"
+datastore = "1.2.0"
 
 # Navigation
 navigationCompose = "2.9.6"
@@ -29,10 +29,17 @@ koin = "4.0.4"
 
 # PowerSync
 powersync = "1.9.0"
-room = "2.7.0"
+room = "2.8.4"
 ksp = "2.2.0-2.0.2"
 socketio = "2.1.0"
-workmanager = "2.9.1"
+workmanager = "2.11.0"
+coil = "2.5.0"
+exoplayer = "1.8.0"
+mapbox = "11.17.1"
+playServicesLocation = "21.3.0"
+coroutinesPlayServices = "1.10.2"
+googleServices = "4.4.2"
+firebaseBom = "34.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -93,9 +100,29 @@ socketio-client = { group = "io.socket", name = "socket.io-client", version.ref 
 # WorkManager
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workmanager" }
 
+# Image Loading
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+coil-video = { group = "io.coil-kt", name = "coil-video", version.ref = "coil" }
+
+# Video Playback
+exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "exoplayer" }
+exoplayer-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "exoplayer" }
+
+# Mapbox
+mapbox-maps = { group = "com.mapbox.maps", name = "android", version.ref = "mapbox" }
+
+# Location
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutinesPlayServices" }
+
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

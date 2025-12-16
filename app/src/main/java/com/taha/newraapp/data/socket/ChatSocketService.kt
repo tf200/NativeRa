@@ -248,7 +248,7 @@ class ChatSocketService(
      * @param messageType Either "text" or "media"
      * @param senderId Your user ID (must match socket.data.userId)
      * @param receiverIds Array of recipient user IDs
-     * @param attachmentId Optional, only for media messages
+     * @param attachment Optional attachment object for media messages
      * @param onAck Callback with (success: Boolean, error: String?)
      */
     fun sendMessage(
@@ -257,7 +257,7 @@ class ChatSocketService(
         messageType: String,
         senderId: String,
         receiverIds: List<String>,
-        attachmentId: String? = null,
+        attachment: com.taha.newraapp.data.socket.model.MessageAttachment? = null,
         onAck: (success: Boolean, error: String?) -> Unit
     ) {
         val timestamp = getUtcTimestamp()
@@ -269,16 +269,27 @@ class ChatSocketService(
             put("messageType", messageType)
             put("senderId", senderId)
             put("receivers", org.json.JSONArray(receiverIds))
-            if (!attachmentId.isNullOrBlank()) put("attachmentId", attachmentId)
+            
+            // Add attachment object if present
+            if (attachment != null) {
+                val attachmentObj = JSONObject().apply {
+                    put("id", attachment.id)
+                    put("type", attachment.type)
+                    put("filename", attachment.filename)
+                    put("mimeType", attachment.mimeType)
+                    put("size", attachment.size)
+                }
+                put("attachment", attachmentObj)
+            }
+            
             put("timestamp", timestamp)
-            // Note: encryption is optional and will be added later
         }
 
         val payload = JSONObject().apply {
             put("message", messageObj)
         }
 
-        Log.d(TAG, "Sending message: id=$messageId, type=$messageType")
+        Log.d(TAG, "Sending message: id=$messageId, type=$messageType, attachment=${attachment?.id}")
 
         try {
             socketManager.emit(EVENT_REQUEST_MESSAGE_SEND, payload) { ackArgs ->
@@ -335,8 +346,7 @@ class ChatSocketService(
                 return
             }
 
-            val ackData = ackArgs[0]
-            val jsonObj = when (ackData) {
+            val jsonObj = when (val ackData = ackArgs[0]) {
                 is JSONObject -> ackData
                 else -> JSONObject(ackData.toString())
             }
@@ -398,8 +408,7 @@ class ChatSocketService(
                 return
             }
 
-            val ackData = ackArgs[0]
-            val jsonObj = when (ackData) {
+            val jsonObj = when (val ackData = ackArgs[0]) {
                 is JSONObject -> ackData
                 else -> JSONObject(ackData.toString())
             }
@@ -431,8 +440,7 @@ class ChatSocketService(
                 return
             }
 
-            val ackData = ackArgs[0]
-            val jsonObj = when (ackData) {
+            val jsonObj = when (val ackData = ackArgs[0]) {
                 is JSONObject -> ackData
                 else -> JSONObject(ackData.toString())
             }
@@ -464,16 +472,15 @@ class ChatSocketService(
                 return
             }
 
-            val ackData = ackArgs[0]
-            val jsonObj = when (ackData) {
+            val jsonObj = when (val ackData = ackArgs[0]) {
                 is JSONObject -> ackData
                 else -> JSONObject(ackData.toString())
             }
 
             val acknowledged = jsonObj.optBoolean("acknowledged", false)
-            val error = jsonObj.optString("error", null)
+            val error = jsonObj.optString("error", "")
 
-            if (!acknowledged && !error.isNullOrBlank()) {
+            if (!acknowledged && error.isNotBlank()) {
                 Log.e(TAG, "Message send failed: localId=$localId, error=$error")
                 removePendingMessage(localId)
                 _messageAcknowledged.tryEmit(

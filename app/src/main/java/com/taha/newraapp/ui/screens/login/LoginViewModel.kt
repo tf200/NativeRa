@@ -14,16 +14,23 @@ import java.util.UUID
 import androidx.lifecycle.viewModelScope
 import com.taha.newraapp.data.model.request.DeviceInfo
 import com.taha.newraapp.domain.usecase.LoginUseCase
+import com.taha.newraapp.domain.usecase.UpdateFcmTokenUseCase
 import com.taha.newraapp.ui.common.Language
 import kotlinx.coroutines.launch
+import android.util.Log
 
 /**
  * ViewModel for the Login screen.
  * Manages login state and user interactions.
  */
 class LoginViewModel(
-    private val loginUseCase: LoginUseCase
+    private val loginUseCase: LoginUseCase,
+    private val updateFcmTokenUseCase: UpdateFcmTokenUseCase
 ) : ViewModel() {
+    
+    companion object {
+        private const val TAG = "FCM_DEBUG"
+    }
     
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -92,6 +99,18 @@ class LoginViewModel(
             val result = loginUseCase(currentState.officerId, currentState.password, deviceInfo)
             
             if (result.isSuccess) {
+                // Fire and forget FCM token update
+                Log.w(TAG, "LoginViewModel: Login SUCCESS, triggering FCM token update...")
+                launch {
+                    try {
+                        Log.w(TAG, "LoginViewModel: Calling updateFcmTokenUseCase()...")
+                        val fcmResult = updateFcmTokenUseCase()
+                        Log.w(TAG, "LoginViewModel: FCM update result: isSuccess=${fcmResult.isSuccess}, error=${fcmResult.exceptionOrNull()?.message}")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "LoginViewModel: FCM token update EXCEPTION!", e)
+                        e.printStackTrace()
+                    }
+                }
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } else {
                 val error = result.exceptionOrNull()?.message ?: "Unknown error"

@@ -3,8 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <application
         android:name=".NewRaApplication"
@@ -21,6 +30,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.NewRaApp">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -39,6 +49,33 @@
                 android:resource="@xml/file_paths" />
         </provider>
         
+        <!-- Foreground Service for WorkManager -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+
+        <service
+            android:name=".data.service.NewRaFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        
+        <!-- Message Processing Service for FCM background handling -->
+        <service
+            android:name=".data.service.MessageProcessingService"
+            android:exported="false"
+            android:foregroundServiceType="remoteMessaging" />
+        
+        <!-- Outgoing Call Activity -->
+        <activity
+            android:name=".ui.screens.call.OutgoingCallActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.NewRaApp" />
+
     </application>
 
 </manifest>

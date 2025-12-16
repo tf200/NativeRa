@@ -1,9 +1,12 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -18,11 +21,28 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Read Mapbox token from local.properties
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(localPropertiesFile.inputStream())
+        }
+        buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${localProperties.getProperty("MAPBOX_ACCESS_TOKEN", "")}\"")
     }
-
+    // Add the splits block here
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86_64")  // Note: use parentheses for Kotlin DSL
+            isUniversalApk = false
+        }
+    }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true              // Changed to true
+            isShrinkResources = true            // Add this line
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -33,11 +53,26 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        }
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    
+    // Resolve duplicate native library conflicts (Jitsi SDK + Mapbox)
+    packaging {
+        jniLibs {
+            pickFirsts += setOf(
+                "lib/arm64-v8a/libc++_shared.so",
+                "lib/armeabi-v7a/libc++_shared.so",
+                "lib/x86/libc++_shared.so",
+                "lib/x86_64/libc++_shared.so"
+            )
+        }
     }
 }
 
@@ -46,6 +81,10 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     // Compose BOM - manages all Compose versions
     implementation(platform(libs.androidx.compose.bom))
@@ -92,6 +131,24 @@ dependencies {
 
     // WorkManager for background uploads
     implementation(libs.androidx.work.runtime.ktx)
+
+    // Image Loading
+    implementation(libs.coil.compose)
+    implementation(libs.coil.video)
+
+    // Video Playback
+    implementation(libs.exoplayer)
+    implementation(libs.exoplayer.ui)
+
+    // Mapbox Maps
+    implementation(libs.mapbox.maps)
+
+    // Location Services
+    implementation(libs.play.services.location)
+    implementation(libs.kotlinx.coroutines.play.services)
+
+    // Jitsi Meet SDK for video/audio calls
+    implementation("org.jitsi.react:jitsi-meet-sdk:11.5.1")
 
     // Testing
     testImplementation(libs.junit)

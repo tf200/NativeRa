@@ -34,12 +34,22 @@ class PowerSyncManager(
     
     private val _syncStatus = MutableStateFlow<SyncStatus>(SyncStatus.Idle)
     val syncStatus: StateFlow<SyncStatus> = _syncStatus.asStateFlow()
+    
+    private val _hasSynced = MutableStateFlow(false)
+    val hasSynced: StateFlow<Boolean> = _hasSynced.asStateFlow()
 
     /**
      * Initialize and connect PowerSync database.
      * Call this after successful login.
      */
-    suspend fun initialize() {
+    /**
+     * Initialize and connect PowerSync database.
+     * Call this after successful login.
+     * 
+     * @param waitForSync If true (default), suspends until first sync completes.
+     *                    Set to false for background services that need immediate DB access.
+     */
+    suspend fun initialize(waitForSync: Boolean = true) {
         if (_database != null) {
             return // Already initialized
         }
@@ -66,6 +76,15 @@ class PowerSyncManager(
             // Connect to PowerSync
             _database?.connect(connector)
             
+            // Wait for first sync to complete before marking as connected
+            // This ensures user data is available before other components try to use it
+            // Wait for first sync to complete before marking as connected
+            // This ensures user data is available before other components try to use it
+            if (waitForSync) {
+                _database?.waitForFirstSync()
+            }
+            
+            _hasSynced.value = true
             _isConnected.value = true
             _syncStatus.value = SyncStatus.Connected
             
@@ -77,7 +96,7 @@ class PowerSyncManager(
     
     /**
      * Disconnect and cleanup PowerSync.
-     * Call this on logout.
+     * Call this for temporary disconnection (e.g., network issues).
      */
     suspend fun disconnect() {
         try {
@@ -91,6 +110,22 @@ class PowerSyncManager(
         }
     }
     
+    /**
+     * Disconnect and clear all PowerSync synced data.
+     * Call this on sign-out to completely remove user data.
+     * After calling this, initialize() will create a fresh database on next login.
+     */
+    suspend fun disconnectAndClear() {
+        try {
+            _database?.disconnectAndClear()
+            _database = null
+            _isConnected.value = false
+            _hasSynced.value = false
+            _syncStatus.value = SyncStatus.Idle
+        } catch (e: Exception) {
+            // Log error but continue - data may already be cleared
+        }
+    }
 
 }
 

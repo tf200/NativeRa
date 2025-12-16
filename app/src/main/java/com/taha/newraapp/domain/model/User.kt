@@ -1,5 +1,8 @@
 package com.taha.newraapp.domain.model
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class User(
     val id: String, // PowerSync database ID - must be used as senderId for socket
     val officerId: String,

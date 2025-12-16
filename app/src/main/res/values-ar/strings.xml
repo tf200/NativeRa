@@ -9,7 +9,7 @@
     <string name="login_password">كلمة المرور</string>
     <string name="login_password_hint">أدخل كلمة المرور</string>
     <string name="login_button">تسجيل الدخول</string>
-    <string name="login_loading">جاري تسجيل الدخول...</string>
+    <string name="login_loading">جاري تسجيل الدخول…</string>
     <string name="login_forgot_password">نسيت كلمة المرور؟</string>
     <string name="login_welcome_back">مرحبًا بعودتك</string>
     <string name="login_sign_in_continue">يرجى تسجيل الدخول للمتابعة</string>
@@ -31,7 +31,7 @@
     <string name="quick_access_recent_reports">تقارير حديثة</string>
 
     <!-- Contacts Screen -->
-    <string name="contacts_search_placeholder">البحث عن جهات الاتصال أو الرسائل...</string>
+    <string name="contacts_search_placeholder">البحث عن جهات الاتصال أو الرسائل…</string>
     <string name="contacts_search_clear">مسح البحث</string>
     <string name="contacts_search_icon_description">بحث</string>
     <string name="contacts_error_prefix">خطأ: %s</string>
@@ -47,14 +47,14 @@
     <string name="chat_last_seen_minutes_ago">آخر ظهور منذ %d د</string>
     <string name="chat_last_seen_hours_ago">آخر ظهور منذ %d س</string>
     <string name="chat_last_seen_date">آخر ظهور %s</string>
-    <string name="chat_loading">جاري التحميل...</string>
+    <string name="chat_loading">جاري التحميل…</string>
     <string name="chat_user_initials_fallback">؟</string>
     <string name="chat_message_sending">جاري الإرسال</string>
     <string name="chat_message_sent">تم الإرسال</string>
     <string name="chat_message_delivered">تم التسليم</string>
     <string name="chat_message_read">قرئت</string>
     <string name="chat_message_failed">فشل</string>
-    <string name="chat_input_placeholder">اكتب رسالة...</string>
+    <string name="chat_input_placeholder">اكتب رسالة…</string>
     <string name="chat_send_description">إرسال رسالة</string>
     <string name="chat_back_description">رجوع</string>
     <string name="chat_voice_call_description">مكالمة صوتية</string>
@@ -64,6 +64,7 @@
     <string name="chat_dismiss">تجاهل</string>
     <string name="chat_date_today">اليوم</string>
     <string name="chat_date_yesterday">أمس</string>
+    <string name="chat_typing">يكتب…</string>
     
     <!-- Chat Attachments -->
     <string name="chat_attach_camera">الكاميرا</string>
@@ -75,6 +76,24 @@
     <string name="chat_camera_dialog_message">ماذا تريد أن تلتقط؟</string>
     <string name="chat_camera_photo">صورة</string>
     <string name="chat_camera_video">فيديو</string>
+    <string name="chat_image_attachment">مرفق صورة</string>
+    <string name="chat_upload_failed">فشل الرفع</string>
+    <string name="chat_video_attachment">مرفق فيديو</string>
+    <string name="chat_play_video">تشغيل الفيديو</string>
+    
+    <!-- Audio Recording -->
+    <string name="audio_cancel">إلغاء التسجيل</string>
+    <string name="audio_stop">إيقاف التسجيل</string>
+    <string name="audio_play">تشغيل الصوت</string>
+    <string name="audio_pause">إيقاف مؤقت للصوت</string>
+    <string name="audio_recording">جاري التسجيل…</string>
+    <string name="audio_download">تنزيل الصوت</string>
+    <string name="chat_audio_message">رسالة صوتية</string>
+
+    <!-- Attachment Downloads -->
+    <string name="chat_download">تنزيل</string>
+    <string name="chat_retry">إعادة المحاولة</string>
+    <string name="chat_downloading">جاري التنزيل…</string>
 
     <!-- Language -->
     <string name="language_english">English</string>
@@ -88,4 +107,11 @@
     <string name="ok">موافق</string>
     <string name="cancel">إلغاء</string>
     <string name="retry">إعادة المحاولة</string>
+    
+    <!-- Sign Out Dialog -->
+    <string name="signout_title">تسجيل الخروج</string>
+    <string name="signout_warning">سيؤدي تسجيل الخروج إلى حذف جميع سجل المحادثات والملفات المخزنة على هذا الجهاز نهائيًا. لا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="signout_confirm_checkbox">أفهم أنه سيتم حذف جميع بياناتي</string>
+    <string name="signout_button">تسجيل الخروج</string>
+    <string name="signout_cancel">إلغاء</string>
 </resources>

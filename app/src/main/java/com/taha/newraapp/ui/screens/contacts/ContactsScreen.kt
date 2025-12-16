@@ -28,6 +28,7 @@ fun ContactsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val typingUsers by viewModel.typingUsers.collectAsState()
 
     Column(
         modifier = Modifier
@@ -66,10 +67,10 @@ fun ContactsScreen(
             singleLine = true,
             shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = Slate100,
+                unfocusedBorderColor = TestRaTheme.extendedColors.border,
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color.White
+                unfocusedContainerColor = TestRaTheme.extendedColors.cardBackground,
+                focusedContainerColor = TestRaTheme.extendedColors.cardBackground
             )
         )
         
@@ -120,7 +121,11 @@ fun ContactsScreen(
                             items(state.recentConversations, key = { "recent_${it.id}" }) { contact ->
                                 MessageItem(
                                     contact = contact,
-                                    onClick = { onNavigateToChat(contact.id) }
+                                    onClick = {
+                                        viewModel.preloadChatData(contact.id)
+                                        onNavigateToChat(contact.id)
+                                    },
+                                    isTyping = contact.id in typingUsers
                                 )
                             }
                         }
@@ -140,7 +145,11 @@ fun ContactsScreen(
                             items(state.allContacts, key = { "all_${it.id}" }) { contact ->
                                 MessageItem(
                                     contact = contact,
-                                    onClick = { onNavigateToChat(contact.id) }
+                                    onClick = {
+                                        viewModel.preloadChatData(contact.id)
+                                        onNavigateToChat(contact.id)
+                                    },
+                                    isTyping = contact.id in typingUsers
                                 )
                             }
                         }

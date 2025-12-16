@@ -1,5 +1,8 @@
 package com.taha.newraapp.ui.screens.login
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -24,11 +27,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -79,7 +82,7 @@ fun LoginScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
-    // Handle login success
+    // Handle login success - navigate immediately
     androidx.compose.runtime.LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             onLoginSuccess()
@@ -88,16 +91,14 @@ fun LoginScreen(
     
     LoginScreenContent(
         uiState = uiState,
-        onEvent = viewModel::onEvent,
-        onLoginSuccess = onLoginSuccess
+        onEvent = viewModel::onEvent
     )
 }
 
 @Composable
 private fun LoginScreenContent(
     uiState: LoginUiState,
-    onEvent: (LoginEvent) -> Unit,
-    onLoginSuccess: () -> Unit
+    onEvent: (LoginEvent) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
@@ -109,20 +110,24 @@ private fun LoginScreenContent(
             .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .imePadding()
+            .imePadding() // Entire page moves up with keyboard
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            // verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
         ) {
-            // Language Selector at TOP RIGHT
+            // Language Selector at TOP RIGHT (inside Column but we want it at top)
+            // To keep it at top while other content centers, we might need a workaround or just let it scroll.
+            // Let's keep it simple: Just put it in the flow.
+            
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp),
+                    .padding(top = 16.dp, bottom = 16.dp),
                 contentAlignment = Alignment.TopEnd
             ) {
                 LanguageSelector(
@@ -130,8 +135,6 @@ private fun LoginScreenContent(
                     onLanguageSelected = { onEvent(LoginEvent.LanguageChanged(it)) }
                 )
             }
-
-            Spacer(modifier = Modifier.height(40.dp))
 
             // Rotated Header Box
             Box(
@@ -312,7 +315,7 @@ private fun LoginScreenContent(
             }
             
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             // Login Button
             Button(
                 onClick = { onEvent(LoginEvent.Login) },
@@ -347,18 +350,18 @@ private fun LoginScreenContent(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
-                            imageVector = Icons.Default.ArrowForward,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = null
                         )
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.weight(1f)) // Push footer to bottom
-            
-            // Footer
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Sign Up Link
             TextButton(onClick = { /* TODO: Navigate to Sign Up */ }) {
-                 Text(
+                Text(
                     text = stringResource(R.string.login_signup_text),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
