@@ -52,6 +52,7 @@ class CallNotificationManager(
         const val EXTRA_CALL_TYPE = "call_type"
         const val EXTRA_CALLER_ID = "caller_id"
         const val EXTRA_CALLER_NAME = "caller_name"
+        const val EXTRA_TOKEN = "livekit_token"
         const val EXTRA_ACTION = "action"
         
         const val ACTION_ACCEPT = "accept"
@@ -74,7 +75,8 @@ class CallNotificationManager(
         roomId: String,
         callType: String,
         callerId: String,
-        callerName: String
+        callerName: String,
+        token: String
     ) {
         Log.d(TAG, "Showing incoming call notification from: $callerName ($callType)")
         
@@ -103,6 +105,7 @@ class CallNotificationManager(
             putExtra(EXTRA_CALL_TYPE, callType)
             putExtra(EXTRA_CALLER_ID, callerId)
             putExtra(EXTRA_CALLER_NAME, callerName)
+            putExtra(EXTRA_TOKEN, token)
         }
         
         val fullScreenPendingIntent = PendingIntent.getActivity(
@@ -120,6 +123,7 @@ class CallNotificationManager(
             putExtra(EXTRA_CALL_TYPE, callType)
             putExtra(EXTRA_CALLER_ID, callerId)
             putExtra(EXTRA_CALLER_NAME, callerName)
+            putExtra(EXTRA_TOKEN, token)
             putExtra(EXTRA_ACTION, ACTION_ACCEPT)
         }
         

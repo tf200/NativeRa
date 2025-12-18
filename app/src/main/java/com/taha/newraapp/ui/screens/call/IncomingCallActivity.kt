@@ -11,11 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import com.taha.newraapp.data.service.CallNotificationManager
 import com.taha.newraapp.data.socket.CallSocketService
 import com.taha.newraapp.ui.theme.TestRaTheme
-import org.jitsi.meet.sdk.JitsiMeetConferenceOptions
-import org.jitsi.meet.sdk.JitsiMeetUserInfo
-import org.jitsi.meet.sdk.JitsiMeetView
 import org.koin.android.ext.android.inject
-import java.net.URL
 
 /**
  * Full-screen activity for incoming calls.
@@ -31,7 +27,6 @@ class IncomingCallActivity : ComponentActivity() {
     
     companion object {
         private const val TAG = "IncomingCallActivity"
-        private const val JITSI_SERVER_URL = "https://jitsi.micladevops.com"
         
         fun createIntent(
             context: Context,
@@ -61,6 +56,7 @@ class IncomingCallActivity : ComponentActivity() {
     private lateinit var callType: String
     private lateinit var callerId: String
     private lateinit var callerName: String
+    private lateinit var token: String
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,6 +82,11 @@ class IncomingCallActivity : ComponentActivity() {
         callType = intent.getStringExtra(CallNotificationManager.EXTRA_CALL_TYPE) ?: "audio"
         callerId = intent.getStringExtra(CallNotificationManager.EXTRA_CALLER_ID) ?: ""
         callerName = intent.getStringExtra(CallNotificationManager.EXTRA_CALLER_NAME) ?: "Unknown"
+        token = intent.getStringExtra(CallNotificationManager.EXTRA_TOKEN) ?: run {
+            Log.e(TAG, "Missing LiveKit token")
+            finish()
+            return
+        }
         
         Log.d(TAG, "Incoming call from: $callerName, type: $callType, room: $roomId")
         
@@ -112,7 +113,7 @@ class IncomingCallActivity : ComponentActivity() {
     }
     
     /**
-     * Accept the call - send socket event and join Jitsi.
+     * Accept the call - send socket event and launch call UI.
      */
     private fun acceptCall() {
         Log.d(TAG, "Accepting call: $callId")
@@ -123,37 +124,18 @@ class IncomingCallActivity : ComponentActivity() {
         // Send accept via socket
         callSocketService.acceptCall(callId, roomId)
         
-        // Launch Jitsi meeting
-        val userInfo = JitsiMeetUserInfo().apply {
-            displayName = "You"  // TODO: Get current user name
-        }
+        // Launch LiveKit call activity
+        val callIntent = CallActivity.createIntent(
+            context = this,
+            token = token,
+            roomId = roomId,
+            callId = callId,
+            isVideo = callType == "video",
+            remoteName = callerName,
+            remoteInitials = getInitials(callerName)
+        )
+        startActivity(callIntent)
         
-        val options = JitsiMeetConferenceOptions.Builder()
-            .setServerURL(URL(JITSI_SERVER_URL))
-            .setRoom(roomId)
-            .setAudioMuted(false)
-            .setVideoMuted(callType != "video")
-            .setAudioOnly(callType != "video")
-            .setUserInfo(userInfo)
-            // UI feature flags
-            .setFeatureFlag("invite.enabled", false)
-            .setFeatureFlag("meeting-password.enabled", false)
-            .setFeatureFlag("live-streaming.enabled", false)
-            .setFeatureFlag("recording.enabled", false)
-            .setFeatureFlag("calendar.enabled", false)
-            .setFeatureFlag("pip.enabled", true)
-            .setFeatureFlag("welcomepage.enabled", false)
-            .setFeatureFlag("toolbox.enabled", true)
-            .setFeatureFlag("overflow-menu.enabled", true)
-            .setFeatureFlag("raise-hand.enabled", false)
-            .setFeatureFlag("reactions.enabled", false)
-            .setFeatureFlag("tile-view.enabled", false)
-            .setFeatureFlag("video-share.enabled", false)
-            .setFeatureFlag("unsaferoomwarning.enabled", false)
-            .setFeatureFlag("fullscreen.enabled", false) // Disable fullscreen mode
-            .build()
-        
-        org.jitsi.meet.sdk.JitsiMeetActivity.launch(this, options)
         finish()
     }
     

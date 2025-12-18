@@ -89,6 +89,15 @@
             android:turnScreenOn="true"
             android:theme="@style/Theme.NewRaApp" />
         
+        <!-- Active Call Activity - LiveKit video/audio call -->
+        <activity
+            android:name=".ui.screens.call.CallActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.NewRaApp" />
+        
         <!-- Call Action Receiver - handles notification button actions -->
         <receiver
             android:name=".data.service.CallActionReceiver"

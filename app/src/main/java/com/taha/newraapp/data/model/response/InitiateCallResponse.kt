@@ -9,6 +9,8 @@ data class InitiateCallResponse(
     val success: Boolean,
     @SerialName("callId")
     val callId: String,
+    @SerialName("token")
+    val token: String? = null,
     @SerialName("error")
     val error: String? = null
 )

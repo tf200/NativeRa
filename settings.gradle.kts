@@ -25,11 +25,10 @@ dependencyResolutionManagement {
                 create<BasicAuthentication>("basic")
             }
         }
-        // Jitsi Meet SDK repository
-        maven { url = uri("https://github.com/jitsi/jitsi-maven-repository/raw/master/releases") }
+        // LiveKit SDK dependencies
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
 rootProject.name = "NewRaApp"
 include(":app")
- 

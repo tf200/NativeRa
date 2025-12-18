@@ -11,11 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import com.taha.newraapp.ui.theme.TestRaTheme
-import org.jitsi.meet.sdk.JitsiMeetActivity
-import org.jitsi.meet.sdk.JitsiMeetConferenceOptions
-import org.jitsi.meet.sdk.JitsiMeetUserInfo
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.net.URL
 import java.util.UUID
 
 /**
@@ -30,7 +26,6 @@ class OutgoingCallActivity : ComponentActivity() {
     
     companion object {
         private const val TAG = "OutgoingCallActivity"
-        private const val JITSI_SERVER_URL = "https://jitsi.micladevops.com"
         
         private const val EXTRA_CALLEE_ID = "callee_id"
         private const val EXTRA_CALLEE_NAME = "callee_name"
@@ -93,7 +88,8 @@ class OutgoingCallActivity : ComponentActivity() {
                 val callEnded by viewModel.callEnded.collectAsState()
                 val isMuted by viewModel.isMuted.collectAsState()
                 val isSpeakerOn by viewModel.isSpeakerOn.collectAsState()
-                val showJitsiUI by viewModel.showJitsiUI.collectAsState()
+                val showCallUI by viewModel.showJitsiUI.collectAsState()
+                val callerToken by viewModel.callerToken.collectAsState()
                 
                 // Close activity when call ends
                 LaunchedEffect(callEnded) {
@@ -102,10 +98,21 @@ class OutgoingCallActivity : ComponentActivity() {
                     }
                 }
                 
-                // Launch Jitsi when call is accepted
-                LaunchedEffect(showJitsiUI) {
-                    if (showJitsiUI) {
-                        launchJitsiMeeting()
+                // Launch LiveKit CallActivity when call is accepted
+                LaunchedEffect(showCallUI, callerToken) {
+                    if (showCallUI && callerToken != null) {
+                        Log.d(TAG, "Call accepted - launching CallActivity")
+                        val callIntent = CallActivity.createIntent(
+                            context = this@OutgoingCallActivity,
+                            token = callerToken!!,
+                            roomId = roomId,
+                            callId = viewModel.currentCallId ?: "",
+                            isVideo = isVideoCall,
+                            remoteName = calleeName,
+                            remoteInitials = calleeInitials
+                        )
+                        startActivity(callIntent)
+                        finish()
                     }
                 }
                 
@@ -128,45 +135,6 @@ class OutgoingCallActivity : ComponentActivity() {
                 )
             }
         }
-    }
-    
-    /**
-     * Launch JitsiMeetActivity for the actual call.
-     */
-    private fun launchJitsiMeeting() {
-        Log.d(TAG, "Launching Jitsi meeting: $roomId")
-        
-        val userInfo = JitsiMeetUserInfo().apply {
-            displayName = userDisplayName
-        }
-        
-        val options = JitsiMeetConferenceOptions.Builder()
-            .setServerURL(URL(JITSI_SERVER_URL))
-            .setRoom(roomId)
-            .setAudioMuted(false)
-            .setVideoMuted(!isVideoCall)
-            .setAudioOnly(!isVideoCall)
-            .setUserInfo(userInfo)
-            // UI feature flags
-            .setFeatureFlag("invite.enabled", false)
-            .setFeatureFlag("meeting-password.enabled", false)
-            .setFeatureFlag("live-streaming.enabled", false)
-            .setFeatureFlag("recording.enabled", false)
-            .setFeatureFlag("calendar.enabled", false)
-            .setFeatureFlag("pip.enabled", true)
-            .setFeatureFlag("welcomepage.enabled", false)
-            .setFeatureFlag("toolbox.enabled", true)
-            .setFeatureFlag("overflow-menu.enabled", true)
-            .setFeatureFlag("raise-hand.enabled", false)
-            .setFeatureFlag("reactions.enabled", false)
-            .setFeatureFlag("tile-view.enabled", false)
-            .setFeatureFlag("video-share.enabled", false)
-            .setFeatureFlag("unsaferoomwarning.enabled", false)
-            .setFeatureFlag("fullscreen.enabled", false) // Disable fullscreen mode
-            .build()
-        
-        JitsiMeetActivity.launch(this, options)
-        finish() // Close this activity, Jitsi takes over
     }
     
     @Deprecated("Deprecated in Java")

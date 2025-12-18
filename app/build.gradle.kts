@@ -62,18 +62,6 @@ android {
         compose = true
         buildConfig = true
     }
-    
-    // Resolve duplicate native library conflicts (Jitsi SDK + Mapbox)
-    packaging {
-        jniLibs {
-            pickFirsts += setOf(
-                "lib/arm64-v8a/libc++_shared.so",
-                "lib/armeabi-v7a/libc++_shared.so",
-                "lib/x86/libc++_shared.so",
-                "lib/x86_64/libc++_shared.so"
-            )
-        }
-    }
 }
 
 dependencies {
@@ -147,8 +135,10 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
 
-    // Jitsi Meet SDK for video/audio calls
-    implementation("org.jitsi.react:jitsi-meet-sdk:11.5.1")
+    // LiveKit SDK for voice/video calls
+    val livekitVersion = "2.23.1"
+    implementation("io.livekit:livekit-android:$livekitVersion")
+    implementation("io.livekit:livekit-android-camerax:$livekitVersion")
 
     // Testing
     testImplementation(libs.junit)

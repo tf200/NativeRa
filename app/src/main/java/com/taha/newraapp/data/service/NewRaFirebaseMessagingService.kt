@@ -141,6 +141,10 @@ class NewRaFirebaseMessagingService : FirebaseMessagingService() {
                     Log.e(TAG, "Missing callerId in incoming call data")
                     return@launch
                 }
+                val token = data["token"] ?: run {
+                    Log.e(TAG, "Missing LiveKit token in incoming call data")
+                    return@launch
+                }
                 
                 Log.i(TAG, ">>> Incoming call: $callId from $callerId ($callType)")
                 
@@ -177,7 +181,8 @@ class NewRaFirebaseMessagingService : FirebaseMessagingService() {
                     roomId = roomId,
                     callType = callType,
                     callerId = callerId,
-                    callerName = callerName
+                    callerName = callerName,
+                    token = token
                 )
                 
             } catch (e: Exception) {

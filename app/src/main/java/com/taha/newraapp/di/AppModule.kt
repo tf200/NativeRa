@@ -96,8 +96,8 @@ val appModule = module {
     // CallNotificationManager - handles incoming call notifications
     single { com.taha.newraapp.data.service.CallNotificationManager(androidContext()) }
     
-    // JitsiMeetManager - handles video/audio calls via Jitsi Meet SDK
-    single { com.taha.newraapp.data.call.JitsiMeetManager(androidContext()) }
+    // LiveKitCallManager - handles voice/video calls via LiveKit SDK
+    single { com.taha.newraapp.data.call.LiveKitCallManager(androidContext()) }
 
     // ===========================================
     // Use Cases
